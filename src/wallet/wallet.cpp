@@ -4966,7 +4966,7 @@ bool CWallet::CreateCoinStake(const FillableSigningProvider& keystore, unsigned 
 
 	CAmount totalRewardAmount = 0;
 	std::vector<CTxOut> ratingRewards;
-    std::vector<opcodetype> winner_types;
+        std::vector<opcodetype> winner_types;
 	if (GetRatingRewards(nReward - nFees, ratingRewards, totalRewardAmount, pindexPrev, hashProofOfStakeSource, winner_types, nullptr)) {
 		blockValue -= totalRewardAmount;
 	}
@@ -5020,7 +5020,7 @@ bool CWallet::CreateCoinStake(const FillableSigningProvider& keystore, unsigned 
 		return error("CreateCoinStake : exceeded coinstake size limit");
 	}
 
-	LogPrint(BCLog::WALLET, "Created coin stake\n");
+	WalletLogPrintf("Coin stake created!\n");
 
 	// Successfully generated coinstake
 	return true;
