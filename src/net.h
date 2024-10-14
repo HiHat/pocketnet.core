@@ -686,7 +686,7 @@ public:
           const std::string &addrNameIn,
           ConnectionType conn_type_in,
           bool inbound_onion = false,
-          std::unique_ptr<i2p::sam::Session>&& i2p_sam_session = nullptr);
+          CNodeOptions&& node_opts = {});
     CNode(const CNode&) = delete;
     CNode& operator=(const CNode&) = delete;
 

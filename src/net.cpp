@@ -520,7 +520,7 @@ CNode* CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCo
                              pszDest ? pszDest : "",
                              conn_type,
                              /*inbound_onion=*/false,
-                             std::move(i2p_transient_session));
+                             CNodeOptions{ .i2p_sam_session = std::move(i2p_transient_session) });
     pnode->AddRef();
 
     // We're making a new connection, harvest entropy from the time (and our peer count)
@@ -3004,7 +3004,7 @@ CNode::CNode(NodeId idIn,
              const std::string& addrNameIn,
              ConnectionType conn_type_in,
              bool inbound_onion,
-             std::unique_ptr<i2p::sam::Session>&& i2p_sam_session)
+             CNodeOptions&& node_opts)
     : m_sock{sock},
       m_connected{GetTime<std::chrono::seconds>()},
       addr{addrIn},
@@ -3019,7 +3019,7 @@ CNode::CNode(NodeId idIn,
       nLocalServices(nLocalServicesIn),
       nMyStartingHeight(nMyStartingHeightIn),
       m_inbound_onion(inbound_onion),
-      m_i2p_sam_session{std::move(i2p_sam_session)}
+      m_i2p_sam_session{std::move(node_opts.i2p_sam_session)}
 {
     addrName = addrNameIn == "" ? addr.ToStringIPPort() : addrNameIn;
     hashContinue = uint256();
