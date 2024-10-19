@@ -3,6 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <i2p.h>
+#include <logging.h>
 #include <netaddress.h>
 #include <test/util/logging.h>
 #include <test/util/net.h>
