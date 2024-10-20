@@ -761,12 +761,8 @@ static void MaybeSetPeerAsAnnouncingHeaderAndIDs(NodeId nodeid, CConnman& connma
     connman.ForNode(nodeid, [&connman](CNode* pfrom) EXCLUSIVE_LOCKS_REQUIRED(::cs_main) {
         AssertLockHeld(::cs_main);
 
-<<<<<<< HEAD
-	LogPrint(BCLog::NET, "net: lNodesAnnouncingHeaderAndIDs.size()=%d peer=%d%s\n",
-=======
 	LogPrint(BCLog::NET, "%s: lNodesAnnouncingHeaderAndIDs.size()=%d peer=%d%s\n",
                         __func__,
->>>>>>> 818139dbbdc6b4fa3c2cc9f0242d9685cfcfec0e
                         lNodesAnnouncingHeaderAndIDs.size(),
                         pfrom->GetId(),
                         fLogIPs ? ", peeraddr=" + pfrom->addr.ToString() : "");
@@ -778,11 +774,7 @@ static void MaybeSetPeerAsAnnouncingHeaderAndIDs(NodeId nodeid, CConnman& connma
                 connman.PushMessage(pnodeStop, CNetMsgMaker(pnodeStop->GetCommonVersion()).Make(NetMsgType::SENDCMPCT, /*high_bandwidth=*/false, /*version=*/CMPCTBLOCKS_VERSION));
                 // save BIP152 bandwidth state: we select peer to be low-bandwidth
                 pnodeStop->m_bip152_highbandwidth_to = false;
-<<<<<<< HEAD
-                LogPrint(BCLog::NET, "pushed SENDCMPCT: announce=false to peer=%d%s\n",
-=======
                 LogPrint(BCLog::NET, "pushed SENDCMPCT: high_bandwidth=false to peer=%d%s\n",
->>>>>>> 818139dbbdc6b4fa3c2cc9f0242d9685cfcfec0e
                                 pnodeStop->GetId(),
                                 fLogIPs ? ", peeraddr=" + pnodeStop->addr.ToString() : "");
                 return true;
@@ -793,11 +785,7 @@ static void MaybeSetPeerAsAnnouncingHeaderAndIDs(NodeId nodeid, CConnman& connma
         // save BIP152 bandwidth state: we select peer to be high-bandwidth
         pfrom->m_bip152_highbandwidth_to = true;
         lNodesAnnouncingHeaderAndIDs.push_back(pfrom->GetId());
-<<<<<<< HEAD
-        LogPrint(BCLog::NET, "pushed SENDCMPCT: announce=true to peer=%d%s\n",
-=======
         LogPrint(BCLog::NET, "pushed SENDCMPCT: high_bandwidth=true to peer=%d%s\n",
->>>>>>> 818139dbbdc6b4fa3c2cc9f0242d9685cfcfec0e
                         pfrom->GetId(),
                         fLogIPs ? ", peeraddr=" + pfrom->addr.ToString() : "");
         return true;
@@ -1520,12 +1508,8 @@ void PeerManager::NewPoSValidBlock(const CBlockIndex *pindex, const std::shared_
         // If the peer has, or we announced to them the previous block already,
         // but we don't think they have this one, go ahead and announce it
         if (state.m_requested_hb_cmpctblocks && !PeerHasHeader(&state, pindex) && PeerHasHeader(&state, pindex->pprev)) {
-<<<<<<< HEAD
-=======
-
             LogPrint(BCLog::NET, "%s: sending header-and-ids %s to peer=%d%s\n", "PeerManager::NewPoSValidBlock",
                     hashBlock.ToString(), pnode->GetId(), fLogIPs ? ", peeraddr=" + pnode->addr.ToString() : "");
->>>>>>> 818139dbbdc6b4fa3c2cc9f0242d9685cfcfec0e
 
             m_connman.PushMessage(pnode, msgMaker.Make(NetMsgType::CMPCTBLOCK, *pcmpctblock, pocketBlockData));
             state.pindexBestHeaderSent = pindex;
@@ -2028,11 +2012,7 @@ void PeerManager::SendBlockTransactions(CNode& pfrom, const CBlock& block, const
     }
 
     const CNetMsgMaker msgMaker(pfrom.GetCommonVersion());
-<<<<<<< HEAD
-    m_connman.PushMessage(&pfrom, msgMaker.Make(NetMsgType::BLOCKTXN, resp));
-=======
     m_connman.PushMessage(&pfrom, msgMaker.Make(NetMsgType::BLOCKTXN, resp, pocketBlockData));
->>>>>>> 818139dbbdc6b4fa3c2cc9f0242d9685cfcfec0e
 }
 
 void PeerManager::ProcessHeadersMessage(CNode& pfrom, const std::vector<CBlockHeader>& headers, bool via_compact_block)
