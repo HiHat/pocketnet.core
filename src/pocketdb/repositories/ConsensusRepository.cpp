@@ -230,7 +230,7 @@ namespace PocketDb
         return result;
     }
 
-    bool ConsensusRepository::ExistsAnotherByName(const string& address, const string& name)
+    bool ConsensusRepository::ExistsAnotherByName(const string& address, const string& name, TxType type)
     {
         bool result = false;
 
@@ -257,7 +257,7 @@ namespace PocketDb
                     cross join Payload p
                         on (p.String2 like ? escape '\')
                     cross join Transactions t
-                        on t.RowId = p.TxId and t.Type = 100 and t.RegId1 != addressRegId.RowId
+                        on t.RowId = p.TxId and t.Type = ? and t.RegId1 != addressRegId.RowId
                     -- filter by chain for exclude mempool
                     cross join Chain c
                         on c.TxId = t.RowId
@@ -265,7 +265,7 @@ namespace PocketDb
                     cross join Last l
                         on l.TxId = t.RowId
             )sql")
-            .Bind(address, _name)
+            .Bind(address, _name, (int)type)
             .Select([&](Cursor& cursor) {
                 if (cursor.Step())
                     cursor.CollectAll(result);
@@ -323,7 +323,7 @@ namespace PocketDb
                     cross join First f on f.TxId = t.RowId
                     left join Last l on l.TxId = t.RowId
                 where
-                    t.Type in (200,201,202,203,204,209,210,211,220) and
+                    t.Type in (200,201,202,203,204,209,210,211,220,221) and
                     t.RegId2 = str2.id
             )sql";
 
@@ -3624,7 +3624,7 @@ namespace PocketDb
                     Mempool m on
                         m.TxId = t.RowId
                 where
-                    t.Type in (200,201,202,209,210,211,220,207) and
+                    t.Type in (200,201,202,209,210,211,220,221,207) and
                     t.RegId1 = str1.id and
                     t.RegId2 = str2.id
             )sql")
@@ -3819,5 +3819,85 @@ namespace PocketDb
         return result;
     }
 
+    int ConsensusRepository::LikersByFlag(const string& txHash)
+    {
+        int result = 0;
+        
+        SqlTransaction(__func__, [&]()
+        {
+            Sql(R"sql(
+                with
+                    flag as ( select r.RowId from Registry r where r.String = ? )
+                select
+                    ifnull(lp.Value,0)LikersAll
+                from
+                    flag
+                cross join
+                    Transactions f on
+                        f.RowId = flag.RowId
+                cross join
+                    Transactions u indexed by Transactions_Type_RegId1_Time on
+                        u.Type in (100, 170) and u.RegId1 = f.RegId3
+                cross join
+                    Chain cu on
+                        cu.TxId = u.RowId
+                cross join
+                    Last lu on
+                        lu.TxId = u.RowId
+                left join
+                    Ratings lp indexed by Ratings_Type_Uid_Last_Value on
+                        lp.Type in (111, 112, 113) and lp.Uid = cu.Uid and lp.Last = 1
+            )sql")
+            .Bind(txHash)
+            .Select([&](Cursor& cursor) {
+                if (cursor.Step())
+                    cursor.CollectAll(result);
+            });
+        });
+
+        return result;
+    }
+
+    int ConsensusRepository::LikersByVote(const string& txHash)
+    {
+        int result = 0;
+        
+        SqlTransaction(__func__, [&]()
+        {
+            Sql(R"sql(
+                with
+                    vote as ( select r.RowId from Registry r where r.String = ? )
+                select
+                    ifnull(lp.Value,0)LikersAll
+                from
+                    vote
+                cross join
+                    Transactions v on
+                        v.RowId = vote.RowId
+                cross join
+                    Transactions f on
+                        f.RowId = v.RegId2
+                cross join
+                    Transactions u indexed by Transactions_Type_RegId1_Time on
+                        u.Type in (100, 170) and u.RegId1 = f.RegId3
+                cross join
+                    Chain cu on
+                        cu.TxId = u.RowId
+                cross join
+                    Last lu on
+                        lu.TxId = u.RowId
+                left join
+                    Ratings lp indexed by Ratings_Type_Uid_Last_Value on
+                        lp.Type in (111, 112, 113) and lp.Uid = cu.Uid and lp.Last = 1
+            )sql")
+            .Bind(txHash)
+            .Select([&](Cursor& cursor) {
+                if (cursor.Step())
+                    cursor.CollectAll(result);
+            });
+        });
+
+        return result;
+    }
 
 }

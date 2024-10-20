@@ -2135,6 +2135,7 @@ bool CChainState::ConnectBlock(const CBlock& block, const PocketBlockRef& pocket
     {
         arith_uint256 targetProofOfStake;
         // Signature will be checked in CheckInputs(), we can avoid it here (fCheckSignature = false)
+        LogPrint(BCLog::STAKEMODIF, "ConnectBlock(): check proof-of-stake signature for received block %s", block.GetHash().GetHex());
         if (!CheckProofOfStake(pindex->pprev, block.vtx[1], block.nBits, hashProof, hashProofOfStakeSource,
             targetProofOfStake, nullptr, m_mempool))
         {
@@ -4381,7 +4382,7 @@ bool CChainState::AcceptBlock(const std::shared_ptr<const CBlock>& pblock, const
     // Header is valid/has work, merkle tree and segwit merkle tree are good...RELAY NOW
     // (but if it does not build on our best tip, let the SendMessages loop relay it)
     if (!IsInitialBlockDownload() && m_chain.Tip() == pindex->pprev)
-        GetMainSignals().NewPoWValidBlock(pindex, pblock, pocketBlock);
+        GetMainSignals().NewPoSValidBlock(pindex, pblock, pocketBlock);
 
     // Write block to history file
     if (fNewBlock) *fNewBlock = true;
@@ -4878,8 +4879,8 @@ void CChainState::LoadMempool(const ArgsManager& args)
     }
     else
     {
-        LOCK(m_mempool.cs);
         LOCK(cs_main);
+        LOCK(m_mempool.cs);
         LogPrintf("Clean SQL mempool..\n");
         PocketDb::TransRepoInst.MempoolClear();
     }

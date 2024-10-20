@@ -104,6 +104,60 @@ namespace PocketDb
         return result;
     }
 
+    vector<WebTag> WebRepository::GetAppTags(int height)
+    {
+        vector<WebTag> result;
+
+        string sql = R"sql(
+            with
+                height as ( select ? as value )
+            select
+                distinct
+                p.RowId,
+                json_each.value
+            from
+                height
+            cross join
+                Chain c on
+                    c.Height = height.value
+            cross join
+                Transactions p on
+                    p.RowId = c.TxId and
+                    p.Type in (221)
+            cross join
+                Last l on
+                    l.TxId = p.RowId
+            cross join
+                Payload pp on
+                    pp.TxId = p.RowId
+            cross join
+                json_each(json_extract(pp.String1, '$.t'))
+        )sql";
+
+        SqlTransaction(
+            __func__,
+            [&]() -> Stmt& {
+                return Sql(sql).Bind(height);
+            },
+            [&] (Stmt& stmt) {
+                stmt.Select([&](Cursor& cursor) {
+                    while (cursor.Step())
+                    {
+                        auto[okId, id] = cursor.TryGetColumnInt64(0);
+                        if (!okId) continue;
+
+                        auto[okValue, value] = cursor.TryGetColumnString(1);
+                        if (!okValue) continue;
+
+                        result.emplace_back(WebTag(id, "en", value));
+                    }
+                });
+            }
+        );
+
+        return result;
+    }
+
     void WebRepository::UpsertContentTags(const vector<WebTag>& contentTags)
     {
         // build distinct lists
@@ -204,7 +258,7 @@ namespace PocketDb
             cross join
                 Transactions t on
                     t.RowId = c.TxId and
-                    t.Type in (100, 200, 201, 202, 209, 210, 204, 205)
+                    t.Type in (100, 200, 201, 202, 209, 210, 204, 205, 221, 211)
             cross join
                 Payload p on
                     p.TxId = t.RowId
@@ -274,6 +328,36 @@ namespace PocketDb
                             //     result.emplace_back(WebContent(id, ContentFieldType_CommentMessage, string1));
 
                             // break;
+
+                        case BARTERON_OFFER:
+
+                            if (auto[ok, val] = cursor.TryGetColumnString(3); ok)
+                                result.emplace_back(WebContent(id, ContentFieldType_BarteronCaption, val));
+
+                            if (auto[ok, val] = cursor.TryGetColumnString(4); ok)
+                                result.emplace_back(WebContent(id, ContentFieldType_BarteronDescription, val));
+
+                            break;
+                        
+                        case APP:
+
+                            if (auto[ok, string1] = cursor.TryGetColumnString(2); ok)
+                            {
+                                UniValue data(UniValue::VOBJ);
+                                data.read(string1);
+
+                                if (data.isNull() || !data.isObject())
+                                    break;
+
+                                if (data.exists("n"))
+                                    result.emplace_back(WebContent(id, ContentFieldType_AppName, data["n"].get_str()));
+
+                                if (data.exists("d"))
+                                    result.emplace_back(WebContent(id, ContentFieldType_AppDescription, data["d"].get_str()));
+                            }
+
+                            break;
+                        
                         default:
                             break;
                         }
@@ -762,7 +846,7 @@ namespace PocketDb
 
         // FlagsJson
         {
-            unordered_map<int64_t, int64_t> _map;
+            unordered_map<int64_t, string> _map;
             SqlTransaction(
                 "CollectAccountStatistic_FlagsJson_Get",
                 [&]() -> Stmt& {
@@ -800,9 +884,10 @@ namespace PocketDb
                     stmt.Select([&](Cursor& cursor) {
                         while (cursor.Step())
                         {
-                            int64_t regId1, count;
-                            if (cursor.CollectAll(regId1, count))
-                                _map.emplace(regId1, count);
+                            int64_t regId1;
+                            string value;
+                            if (cursor.CollectAll(regId1, value))
+                                _map.emplace(regId1, value);
                         }
                     });
                 }
@@ -825,7 +910,7 @@ namespace PocketDb
 
         // FirstFlagsCount
         {
-            unordered_map<int64_t, int64_t> _map;
+            unordered_map<int64_t, string> _map;
             SqlTransaction(
                 "CollectAccountStatistic_FirstFlagsCount_Get",
                 [&]() -> Stmt& {
@@ -879,9 +964,10 @@ namespace PocketDb
                     stmt.Select([&](Cursor& cursor) {
                         while (cursor.Step())
                         {
-                            int64_t regId1, count;
-                            if (cursor.CollectAll(regId1, count))
-                                _map.emplace(regId1, count);
+                            int64_t regId1;
+                            string value;
+                            if (cursor.CollectAll(regId1, value))
+                                _map.emplace(regId1, value);
                         }
                     });
                 }

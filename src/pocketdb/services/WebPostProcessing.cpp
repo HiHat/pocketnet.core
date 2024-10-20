@@ -111,7 +111,7 @@ namespace PocketServices
         catch (const std::exception& e)
         {
             LogPrintf("Warning: WebPostProcessor::ProcessNextHeight - %s\n", e.what());
-	    return false;
+	        return false;
         }
     }
 
@@ -122,7 +122,10 @@ namespace PocketServices
         {
             int64_t nTime1 = GetTimeMicros();
 
-            vector<WebTag> contentTags = webRepoInst->GetContentTags(height);
+            auto contentTags = webRepoInst->GetContentTags(height);
+            auto appTags = webRepoInst->GetAppTags(height);
+            contentTags.insert(contentTags.end(), appTags.begin(), appTags.end());
+            
             if (contentTags.empty())
                 return;
 

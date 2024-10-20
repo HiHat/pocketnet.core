@@ -113,12 +113,11 @@ void Staker::worker(const util::Ref& context, CChainParams const& chainparams, s
     CHECK_NONFATAL(node.mempool); // Mempool should be always available here
     CHECK_NONFATAL(node.chainman); // Same for this
     bool running = true;
-//    auto static WorkerLastCoinStakeSearchTime = 0;
 
     auto wallet = GetWallet(walletName);
     if (!wallet) return;
 
-    util::ThreadRename("coin-staker" + wallet->GetDisplayName());
+    util::ThreadRename("staker-" + walletName);         // Thread name only 16 bytes long
 
     LogPrintf("Staker worker thread started for \"%s\"\n", wallet->GetDisplayName());
 
@@ -304,7 +303,7 @@ bool Staker::signBlock(std::shared_ptr<CBlock> block, std::shared_ptr<CWallet> w
 
         if (wallet->CreateCoinStake(*legacyKeyStore, block->nBits, nSearchInterval, nFees, txCoinStake, key))
         {
-            if (txCoinStake.nTime > ::ChainActive().Tip()->GetMedianTimePast())
+            if (txCoinStake.nTime > ::ChainActive().Tip()->GetMedianTimePast() || Params().NetworkID() == NetworkId::NetworkRegTest)
             {
                 if (sign(block, txCoinStake, vtx, *legacyKeyStore, key, wallet)) {
                     nLastCoinStakeTime = nSearchTime;

@@ -52,6 +52,25 @@ namespace PocketDb
         bool Moderator = false; // 3
         bool Developer = false; // 4
 
+        void Set(int v)
+        {
+            switch (v)
+            {
+                case 1:
+                    Shark = true;
+                    break;
+                case 2:
+                    Whale = true;
+                    break;
+                case 3:
+                    Moderator = true;
+                    break;
+                case 4:
+                    Developer = true;
+                    break;
+            }
+        }
+
         UniValue ToJson()
         {
             UniValue ret(UniValue::VARR);
@@ -124,7 +143,7 @@ namespace PocketDb
         bool ExistsScore(const string& address, const string& contentHash, TxType type, bool mempool);
         bool ExistsUserRegistrations(vector<string>& addresses);
         bool ExistsAccountBan(const string& address, int height);
-        bool ExistsAnotherByName(const string& address, const string& name);
+        bool ExistsAnotherByName(const string& address, const string& name, TxType type);
         bool ExistsNotDeleted(const string& txHash, const string& address, const vector<TxType>& types);
         bool ExistsActiveJury(const string& juryId);
 
@@ -219,6 +238,8 @@ namespace PocketDb
         int CountModerationFlag(const string& address, int height, bool includeMempool);
         int CountModerationFlag(const string& address, const string& addressTo, bool includeMempool);
         bool AllowJuryModerate(const string& address, const string& flagTxHash);
+        int LikersByFlag(const string& txHash);
+        int LikersByVote(const string& txHash);
 
     protected:
     
