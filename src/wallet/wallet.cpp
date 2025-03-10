@@ -4825,7 +4825,7 @@ bool CWallet::CreateCoinStake(const FillableSigningProvider& keystore, unsigned 
 	CScript scriptPubKeyKernel;
 	CDataStream hashProofOfStakeSource(SER_GETHASH, 0);
 
-	LogPrint(BCLog::SELECTCOINS, "CreateCoinStake : Selected UTXO=%d value=%ld txNew.nTime=%s nSearchInterval=%ld nBits=%#010x\n", setCoins.size(), nValueIn, FormatISO8601DateTime(txNew.nTime), nSearchInterval, nBits);
+	LogPrint(BCLog::STAKEMODIF, "CreateCoinStake : Selected UTXO=%d value=%ld txNew.nTime=%s nSearchInterval=%ld nBits=%#010x\n", setCoins.size(), nValueIn, FormatISO8601DateTime(txNew.nTime), nSearchInterval, nBits);
 	
 	for (auto & pcoin : setCoins) {
 		static int nMaxStakeSearchInterval = 60;
