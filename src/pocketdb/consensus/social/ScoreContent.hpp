@@ -165,6 +165,11 @@ namespace PocketConsensus
             auto reputationConsensus = PocketConsensus::ConsensusFactoryInst_Reputation.Instance(Height);
             auto address = ptx->GetAddress();
             auto[mode, reputation, balance] = reputationConsensus->GetAccountMode(*address);
+
+            LogPrint(BCLog::CONSENSUS,
+                "ScoreContentConsensus::ValidateLimit():  tx=%s type=%s adress=%s limit=%d/%d at height:%d\n",
+                *ptx->GetHash(), *ptx->GetType(), *address, count, GetScoresLimit(mode), Height);
+
             if (count >= GetScoresLimit(mode))
                 return {false, ConsensusResult_ScoreLimit};
 

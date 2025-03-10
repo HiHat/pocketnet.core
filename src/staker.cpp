@@ -50,7 +50,7 @@ uint64_t Staker::getLastCoinStakeSearchInterval()
     return lastCoinStakeSearchInterval;
 }
 
- uint64_t Staker::getLastCoinStakeTime()
+uint64_t Staker::getLastCoinStakeTime()
 {
     return nLastCoinStakeTime;
 }
@@ -136,6 +136,8 @@ void Staker::worker(const util::Ref& context, CChainParams const& chainparams, s
             while (wallet->IsLocked() && !ShutdownRequested())
                 m_interrupt.sleep_for(std::chrono::milliseconds{1000});
 
+//            LogPrint(BCLog::SELECTCOINS, "Staker::worker(): wallet unlocked!\n");
+
             if (gArgs.GetBoolArg("-stakingrequirespeers", DEFAULT_STAKINGREQUIRESPEERS))
             {
                 do
@@ -171,6 +173,9 @@ void Staker::worker(const util::Ref& context, CChainParams const& chainparams, s
             if ((GetAdjustedTime() & ~STAKE_TIMESTAMP_MASK) > std::max(wallet->GetLastCoinStakeSearchTime(), nLastCoinStakeTime) ||     // For main network algorithm in full-time mode
                     Params().NetworkID() == NetworkId::NetworkRegTest)                                                                  // For regtest we can skip time checks
             {
+                if (ShutdownRequested())
+                    break;
+
                 uint64_t nFees = 0;
                 auto assembler = BlockAssembler(*node.mempool, chainparams);
 
@@ -181,11 +186,15 @@ void Staker::worker(const util::Ref& context, CChainParams const& chainparams, s
 
                 auto block = std::make_shared<CBlock>(blocktemplate->block);
 
+                LogPrint(BCLog::SELECTCOINS, "Staker::worker(): before signBlock()\n");
+
                 if (signBlock(block, wallet, nFees))
                 {
                     // Extend pocketBlock with coinStake transaction
                     if (auto[ok, ptx] = PocketServices::Serializer::DeserializeTransaction(block->vtx[1]); ok)
                         blocktemplate->pocketBlock->emplace_back(ptx);
+
+                    LogPrint(BCLog::SELECTCOINS, "Staker::worker(): before CheckStake(\n");
 
                     CheckStake(block, blocktemplate->pocketBlock, wallet, chainparams, *node.chainman, *node.mempool);
                 }

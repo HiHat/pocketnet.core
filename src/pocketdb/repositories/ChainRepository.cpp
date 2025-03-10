@@ -186,51 +186,65 @@ namespace PocketDb
 
     void ChainRepository::InsertTransactionChainData(const string& blockHash, int blockNumber, int height, const string& txHash, const optional<int64_t>& id)
     {
-        Sql(R"sql(
-            with
-                block as (
-                    select
-                        RowId
-                    from
-                        Registry
-                    where
-                        String = ?
-                ),
-                tx as (
+        try
+        {
+            Sql(R"sql(
+                with
+                    block as (
+                        select
+                            RowId
+                        from
+                            Registry
+                        where
+                            String = ?
+                    ),
+                    tx as (
+                        select
+                            t.RowId
+                        from
+                            vTx t
+                        where
+                            t.Hash = ?
+                    )
+                insert or fail into Chain
+                    (TxId, BlockId, BlockNum, Height, Uid)
+                select
+                    tx.RowId, block.RowId, ?, ?, ?
+                from
+                    tx,
+                    block
+            )sql")
+            .Bind(blockHash, txHash, blockNumber, height, id)
+            .Run();
+        }
+        catch (const std::exception& e)
+        {
+            LogPrintf("%s: Failed to insert into Chain: %s\n", __func__, e.what());
+        }
+
+        if (id.has_value())
+        {
+            try
+            {
+                Sql(R"sql(
+                    insert or fail into Last
+                        (TxId)
                     select
                         t.RowId
                     from
                         vTx t
                     where
                         t.Hash = ?
-                )
-            insert or fail into Chain
-                (TxId, BlockId, BlockNum, Height, Uid)
-            select
-                tx.RowId, block.RowId, ?, ?, ?
-            from
-                tx,
-                block
-        )sql")
-        .Bind(blockHash, txHash, blockNumber, height, id)
-        .Run();
-
-        if (id.has_value())
-        {
-            Sql(R"sql(
-                insert or fail into Last
-                    (TxId)
-                select
-                    t.RowId
-                from
-                    vTx t
-                where
-                    t.Hash = ?
-            )sql")
-            .Bind(txHash)
-            .Run();
+                )sql")
+                .Bind(txHash)
+                .Run();
+            }
+            catch (const std::exception& e)
+            {
+                LogPrintf("%s: Failed to insert into Last: %s\n", __func__, e.what());
+            }
         }
-    }
+     }
 
     void ChainRepository::SetFirst(const string& txHash)
     {
@@ -317,6 +331,10 @@ namespace PocketDb
         if (!SocialRegistryTypes::IsSatisfy(txInfo.Type, isFirst))
             return;
 
+        LogPrint(BCLog::CONSENSUS,
+            "ChainRepository::IndexSocialRegistryTx(): txInfo.Hash=%s, txInfo.Type=%d, height=%d, txInfo.BlockNumber=%d\n",
+            txInfo.Hash, txInfo.Type, height, txInfo.BlockNumber);
+
         Sql(R"sql(
             insert or ignore into SocialRegistry (AddressId, Type, Height, BlockNum)
             with
@@ -351,6 +369,10 @@ namespace PocketDb
     void ChainRepository::EnsureAndTrimSocialRegistry(int height)
     {
         int minHeight = height - PocketConsensus::BaseConsensus::GetConsensusLimit(PocketConsensus::ConsensusLimit_depth, height);
+
+        LogPrint(BCLog::CONSENSUS,
+            "ChainRepository::EnsureAndTrimSocialRegistry(): height=%d minHeight=%d\n",
+            height, minHeight);
         
         // Trim from upper
         Sql(R"sql(
