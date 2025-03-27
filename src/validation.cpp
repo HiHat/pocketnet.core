@@ -2153,7 +2153,7 @@ bool CChainState::ConnectBlock(const CBlock& block, const PocketBlockRef& pocket
     {
         arith_uint256 targetProofOfStake;
         // Signature will be checked in CheckInputs(), we can avoid it here (fCheckSignature = false)
-        LogPrint(BCLog::STAKEMODIF, "ConnectBlock(): check proof-of-stake signature for received block %s", block.GetHash().GetHex());
+        LogPrint(BCLog::STAKEMODIF, "ConnectBlock(): check proof-of-stake signature for received block %s\n", block.GetHash().GetHex());
         if (!CheckProofOfStake(pindex->pprev, block.vtx[1], block.nBits, hashProof, hashProofOfStakeSource,
             targetProofOfStake, nullptr, m_mempool))
         {
@@ -3161,6 +3161,9 @@ bool CChainState::ActivateBestChainStep(BlockValidationState& state, const CChai
     bool fBlocksDisconnected = false;
     DisconnectedBlockTransactions disconnectpool;
     while (m_chain.Tip() && m_chain.Tip() != pindexFork) {
+
+        LogPrint(BCLog::SYNC, "Best chain block:%d (%s), rolling back to block:%d (%s)\n", m_chain.Tip()->nHeight, m_chain.Tip()->GetBlockHash().GetHex(), pindexFork->nHeight, pindexFork->GetBlockHash().GetHex());
+
         if (!DisconnectTip(state, chainparams, &disconnectpool)) {
             // This is likely a fatal error, but keep the mempool consistent,
             // just in case. Only remove from the mempool in this case.
