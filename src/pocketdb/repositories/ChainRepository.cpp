@@ -331,10 +331,7 @@ namespace PocketDb
         if (!SocialRegistryTypes::IsSatisfy(txInfo.Type, isFirst))
             return;
 
-        LogPrint(BCLog::CONSENSUS,
-            "ChainRepository::IndexSocialRegistryTx(): txInfo.Hash=%s, txInfo.Type=%d, height=%d, txInfo.BlockNumber=%d\n",
-            txInfo.Hash, txInfo.Type, height, txInfo.BlockNumber);
-
+        bool inserted = false;
         Sql(R"sql(
             insert or ignore into SocialRegistry (AddressId, Type, Height, BlockNum)
             with
@@ -353,9 +350,22 @@ namespace PocketDb
                 ?
             from
                 address
+            returning 1
         )sql")
         .Bind(txInfo.Hash, txInfo.Type, height, txInfo.BlockNumber)
-        .Run();
+        .Select([&](Cursor& cursor) {
+            if (cursor.Step())
+                inserted = true;
+        });
+
+        if (inserted)
+        {
+            LogPrint(BCLog::CONSENSUS,
+                "ChainRepository::IndexSocialRegistryTx(): inserted txInfo.Hash=%s, txInfo.Type=%d, height=%d, txInfo.BlockNumber=%d\n",
+                txInfo.Hash, txInfo.Type, height, txInfo.BlockNumber);
+        } else {
+            LogPrint(BCLog::CONSENSUS, "ChainRepository::IndexSocialRegistryTx(): insertion failed!\n");
+        }
     }
 
     void ChainRepository::EnsureSocialRegistry(int height)
