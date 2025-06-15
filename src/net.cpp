@@ -14,7 +14,7 @@
 #include <compat.h>
 #include <consensus/consensus.h>
 #include <crypto/sha256.h>
-#include <i2p/i2p.h>
+#include <i2p.h>
 #include <net_permissions.h>
 #include <netbase.h>
 #include <node/ui_interface.h>
@@ -169,7 +169,7 @@ static std::vector<CAddress> ConvertSeeds(const std::vector<uint8_t> &vSeedsIn)
         s >> endpoint;
         CAddress addr{endpoint, GetDesirableServiceFlags(NODE_NONE)};
         addr.nTime = GetTime() - rng.randrange(nOneWeek) - nOneWeek;
-        LogPrintCategory(BCLog::NET, "Added hardcoded seed: %s\n", addr.ToString());
+        LogPrint(BCLog::NET, "Added hardcoded seed: %s\n", addr.ToString());
         vSeedsOut.push_back(addr);
     }
     return vSeedsOut;
@@ -227,7 +227,7 @@ void AdvertiseLocal(CNode *pnode)
         }
         if (addrLocal.IsRoutable() || gArgs.GetBoolArg("-addrmantest", false))
         {
-            LogPrintCategory(BCLog::NET, "AdvertiseLocal: advertising address %s\n", addrLocal.ToString());
+            LogPrint(BCLog::NET, "AdvertiseLocal: advertising address %s\n", addrLocal.ToString());
             pnode->PushAddress(addrLocal, rng);
         }
     }
@@ -398,7 +398,7 @@ static CAddress GetBindAddress(const Sock& sock)
         if (!getsockname(sock, (struct sockaddr*)&sockaddr_bind, &sockaddr_bind_len)) {
             addr_bind.SetSockAddr((const struct sockaddr*)&sockaddr_bind);
         } else {
-            LogPrintCategory(BCLog::NET, "Warning: getsockname failed\n");
+            LogPrint(BCLog::NET, "Warning: getsockname failed\n");
         }
     }
     return addr_bind;
@@ -419,7 +419,7 @@ CNode* CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCo
     }
 
     /// debug print
-    LogPrintCategory(BCLog::NET, "trying connection %s lastseen=%.1fhrs\n",
+    LogPrint(BCLog::NET, "trying connection %s lastseen=%.1fhrs\n",
         pszDest ? pszDest : addrConnect.ToString(),
         pszDest ? 0.0 : (double)(GetAdjustedTime() - addrConnect.nTime)/3600.0);
 
@@ -433,7 +433,7 @@ CNode* CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCo
             const CService rnd{resolved[GetRand(resolved.size())]};
             addrConnect = CAddress{MaybeFlipIPv6toCJDNS(rnd), NODE_NONE};
             if (!addrConnect.IsValid()) {
-                LogPrintCategory(BCLog::NET, "Resolver returned invalid address %s for %s\n", addrConnect.ToString(), pszDest);
+                LogPrint(BCLog::NET, "Resolver returned invalid address %s for %s\n", addrConnect.ToString(), pszDest);
                 return nullptr;
             }
             // It is possible that we already have a connection to the IP/port pszDest resolved to.
@@ -543,7 +543,7 @@ void CNode::CloseSocketDisconnect()
     fDisconnect = true;
     LOCK(m_sock_mutex);
     if (m_sock) {
-        LogPrintCategory(BCLog::NET, "disconnecting peer=%d\n", id);
+        LogPrint(BCLog::NET, "disconnecting peer=%d\n", id);
         m_sock.reset();
 
         TRACEPOINT(net, closed_connection,
@@ -743,19 +743,19 @@ int V1TransportDeserializer::readHeader(const char *pch, unsigned int nBytes)
         hdrbuf >> hdr;
     }
     catch (const std::exception&) {
-        LogPrintCategory(BCLog::NET, "HEADER ERROR - UNABLE TO DESERIALIZE, peer=%d\n", m_node_id);
+        LogPrint(BCLog::NET, "HEADER ERROR - UNABLE TO DESERIALIZE, peer=%d\n", m_node_id);
         return -1;
     }
 
     // Check start string, network magic
     if (memcmp(hdr.pchMessageStart, m_chain_params.MessageStart(), CMessageHeader::MESSAGE_START_SIZE) != 0) {
-        LogPrintCategory(BCLog::NET, "HEADER ERROR - MESSAGESTART (%s, %u bytes), received %s, peer=%d\n", hdr.GetCommand(), hdr.nMessageSize, HexStr(hdr.pchMessageStart), m_node_id);
+        LogPrint(BCLog::NET, "HEADER ERROR - MESSAGESTART (%s, %u bytes), received %s, peer=%d\n", hdr.GetCommand(), hdr.nMessageSize, HexStr(hdr.pchMessageStart), m_node_id);
         return -1;
     }
 
     // reject messages larger than MAX_SIZE or MAX_PROTOCOL_MESSAGE_LENGTH
     if (hdr.nMessageSize > MAX_SIZE || hdr.nMessageSize > MAX_PROTOCOL_MESSAGE_LENGTH) {
-        LogPrintCategory(BCLog::NET, "HEADER ERROR - SIZE (%s, %u bytes), peer=%d\n", hdr.GetCommand(), hdr.nMessageSize, m_node_id);
+        LogPrint(BCLog::NET, "HEADER ERROR - SIZE (%s, %u bytes), peer=%d\n", hdr.GetCommand(), hdr.nMessageSize, m_node_id);
         return -1;
     }
 
@@ -808,7 +808,7 @@ Optional<CNetMessage> V1TransportDeserializer::GetMessage(const std::chrono::mic
 
     // Check checksum and header command string
     if (memcmp(hash.begin(), hdr.pchChecksum, CMessageHeader::CHECKSUM_SIZE) != 0) {
-        LogPrintCategory(BCLog::NET, "CHECKSUM ERROR (%s, %u bytes), expected %s was %s, peer=%d\n",
+        LogPrint(BCLog::NET, "CHECKSUM ERROR (%s, %u bytes), expected %s was %s, peer=%d\n",
                  SanitizeString(msg->m_command), msg->m_message_size,
                  HexStr(Span<uint8_t>(hash.begin(), hash.begin() + CMessageHeader::CHECKSUM_SIZE)),
                  HexStr(hdr.pchChecksum),
@@ -816,7 +816,7 @@ Optional<CNetMessage> V1TransportDeserializer::GetMessage(const std::chrono::mic
         out_err_raw_size = msg->m_raw_message_size;
         msg = nullopt;
     } else if (!hdr.IsCommandValid()) {
-        LogPrintCategory(BCLog::NET, "HEADER ERROR - COMMAND (%s, %u bytes), peer=%d\n",
+        LogPrint(BCLog::NET, "HEADER ERROR - COMMAND (%s, %u bytes), peer=%d\n",
                  hdr.GetCommand(), msg->m_message_size, m_node_id);
         out_err_raw_size = msg->m_raw_message_size;
         msg = nullopt;
@@ -1084,7 +1084,7 @@ bool CConnman::AttemptToEvictConnection()
     LOCK(cs_vNodes);
     for (CNode* pnode : vNodes) {
         if (pnode->GetId() == evicted) {
-            LogPrintCategory(BCLog::NET, "selected %s connection for eviction peer=%d; disconnecting\n", pnode->ConnectionTypeAsString(), pnode->GetId());
+            LogPrint(BCLog::NET, "selected %s connection for eviction peer=%d; disconnecting\n", pnode->ConnectionTypeAsString(), pnode->GetId());
             TRACEPOINT(net, evicted_inbound_connection,
                 pnode->GetId(),
                 pnode->GetAddrName().c_str(),
@@ -1175,7 +1175,7 @@ void CConnman::CreateNodeFromAcceptedSocket(std::unique_ptr<Sock>&& sock,
     bool banned = m_banman && m_banman->IsBanned(addr);
     if (!NetPermissions::HasFlag(permissionFlags, NetPermissionFlags::PF_NOBAN) && banned)
     {
-        LogPrintCategory(BCLog::NET, "connection from %s dropped (banned)\n", addr.ToString());
+        LogPrint(BCLog::NET, "connection from %s dropped (banned)\n", addr.ToString());
         return;
     }
 
@@ -1183,7 +1183,7 @@ void CConnman::CreateNodeFromAcceptedSocket(std::unique_ptr<Sock>&& sock,
     bool discouraged = m_banman && m_banman->IsDiscouraged(addr);
     if (!NetPermissions::HasFlag(permissionFlags, NetPermissionFlags::PF_NOBAN) && nInbound + 1 >= nMaxInbound && discouraged)
     {
-        LogPrintCategory(BCLog::NET, "connection from %s dropped (discouraged)\n", addr.ToString());
+        LogPrint(BCLog::NET, "connection from %s dropped (discouraged)\n", addr.ToString());
         return;
     }
 
@@ -1191,7 +1191,7 @@ void CConnman::CreateNodeFromAcceptedSocket(std::unique_ptr<Sock>&& sock,
     {
         if (!AttemptToEvictConnection()) {
             // No connection to evict, disconnect the new connection
-            LogPrintCategory(BCLog::NET, "failed to find an eviction candidate - connection dropped (full)\n");
+            LogPrint(BCLog::NET, "failed to find an eviction candidate - connection dropped (full)\n");
             return;
         }
     }
@@ -1223,7 +1223,7 @@ void CConnman::CreateNodeFromAcceptedSocket(std::unique_ptr<Sock>&& sock,
     pnode->m_prefer_evict = discouraged;
     m_msgproc->InitializeNode(pnode);
 
-    LogPrintCategory(BCLog::NET, "connection from %s accepted\n", addr.ToString());
+    LogPrint(BCLog::NET, "connection from %s accepted\n", addr.ToString());
     TRACEPOINT(net, inbound_connection,
         pnode->GetId(),
         pnode->GetAddrName().c_str(),
@@ -1249,7 +1249,7 @@ void CConnman::DisconnectNodes()
             // Disconnect any connected nodes
             for (CNode* pnode : vNodes) {
                 if (!pnode->fDisconnect) {
-                    LogPrintCategory(BCLog::NET, "Network not active, dropping peer=%d\n", pnode->GetId());
+                    LogPrint(BCLog::NET, "Network not active, dropping peer=%d\n", pnode->GetId());
                     pnode->fDisconnect = true;
                 }
             }
@@ -1324,7 +1324,7 @@ bool CConnman::InactivityCheck(CNode *pnode)
 
         if (pnode->nLastRecv == 0 || pnode->nLastSend == 0)
         {
-            LogPrintCategory(BCLog::NET, "socket no message in first %i seconds, %d %d from %d\n", m_peer_connect_timeout, pnode->nLastRecv != 0, pnode->nLastSend != 0, pnode->GetId());
+            LogPrint(BCLog::NET, "socket no message in first %i seconds, %d %d from %d\n", m_peer_connect_timeout, pnode->nLastRecv != 0, pnode->nLastSend != 0, pnode->GetId());
             return true;
         }
         else if (nTime - pnode->nLastSend > TIMEOUT_INTERVAL)
@@ -1339,7 +1339,7 @@ bool CConnman::InactivityCheck(CNode *pnode)
         }
         else if (!pnode->fSuccessfullyConnected)
         {
-            LogPrintCategory(BCLog::NET, "version handshake timeout from %d\n", pnode->GetId());
+            LogPrint(BCLog::NET, "version handshake timeout from %d\n", pnode->GetId());
             return true;
         }
 
@@ -1485,7 +1485,7 @@ void CConnman::SocketHandlerConnected(const std::vector<CNode*>& nodes,
             {
                 // socket closed gracefully
                 if (!pnode->fDisconnect) {
-                    LogPrintCategory(BCLog::NET, "socket closed for peer=%d\n", pnode->GetId());
+                    LogPrint(BCLog::NET, "socket closed for peer=%d\n", pnode->GetId());
                 }
                 pnode->CloseSocketDisconnect();
             }
@@ -1496,7 +1496,7 @@ void CConnman::SocketHandlerConnected(const std::vector<CNode*>& nodes,
                 if (nErr != WSAEWOULDBLOCK && nErr != WSAEMSGSIZE && nErr != WSAEINTR && nErr != WSAEINPROGRESS)
                 {
                     if (!pnode->fDisconnect) {
-                        LogPrintCategory(BCLog::NET, "socket recv error for peer=%d: %s\n", pnode->GetId(), NetworkErrorString(nErr));
+                        LogPrint(BCLog::NET, "socket recv error for peer=%d: %s\n", pnode->GetId(), NetworkErrorString(nErr));
                     }
                     pnode->CloseSocketDisconnect();
                 }
@@ -1777,7 +1777,7 @@ void CConnman::DumpAddresses()
     CAddrDB adb;
     adb.Write(addrman);
 
-    LogPrintCategory(BCLog::NET, "Flushed %d addresses to peers.dat  %dms\n",
+    LogPrint(BCLog::NET, "Flushed %d addresses to peers.dat  %dms\n",
            addrman.size(), GetTimeMillis() - nStart);
 }
 
@@ -1806,7 +1806,7 @@ bool CConnman::GetTryNewOutboundPeer()
 void CConnman::SetTryNewOutboundPeer(bool flag)
 {
     m_try_another_outbound_peer = flag;
-    LogPrintCategory(BCLog::NET, "net: setting try another outbound peer=%s\n", flag ? "true" : "false");
+    LogPrint(BCLog::NET, "net: setting try another outbound peer=%s\n", flag ? "true" : "false");
 }
 
 // Return the number of peers we have over our outbound connection limit
@@ -2003,7 +2003,7 @@ void CConnman::ThreadOpenConnections(const std::vector<std::string> connect)
                     !HasAllDesirableServiceFlags(addr.nServices) ||
                     setConnected.count(addr.GetGroup(addrman.m_asmap))) continue;
                 addrConnect = addr;
-                LogPrintCategory(BCLog::NET, "Trying to make an anchor connection to %s\n", addrConnect.ToString());
+                LogPrint(BCLog::NET, "Trying to make an anchor connection to %s\n", addrConnect.ToString());
                 break;
             }
 
@@ -2085,7 +2085,7 @@ void CConnman::ThreadOpenConnections(const std::vector<std::string> connect)
                 int randsleep = GetRandInt(FEELER_SLEEP_WINDOW * 1000);
                 if (!interruptNet.sleep_for(std::chrono::milliseconds(randsleep)))
                     return;
-                LogPrintCategory(BCLog::NET, "Making feeler connection to %s\n", addrConnect.ToString());
+                LogPrint(BCLog::NET, "Making feeler connection to %s\n", addrConnect.ToString());
             }
 
             OpenNetworkConnection(addrConnect, (int)setConnected.size() >= std::min(nMaxConnections - 1, 2), &grant, nullptr, conn_type);
@@ -3086,9 +3086,9 @@ CNode::CNode(NodeId idIn,
     mapRecvBytesPerMsgCmd[NET_MESSAGE_COMMAND_OTHER] = 0;
 
     if (fLogIPs) {
-        LogPrintCategory(BCLog::NET, "Added connection to %s peer=%d\n", addrName, id);
+        LogPrint(BCLog::NET, "Added connection to %s peer=%d\n", addrName, id);
     } else {
-        LogPrintCategory(BCLog::NET, "Added connection peer=%d\n", id);
+        LogPrint(BCLog::NET, "Added connection peer=%d\n", id);
     }
 
     m_deserializer = MakeUnique<V1TransportDeserializer>(V1TransportDeserializer(Params(), GetId(), SER_NETWORK, INIT_PROTO_VERSION));
@@ -3103,7 +3103,7 @@ bool CConnman::NodeFullyConnected(const CNode* pnode)
 void CConnman::PushMessage(CNode* pnode, CSerializedNetMsg&& msg)
 {
     size_t nMessageSize = msg.data.size();
-    LogPrintCategory(BCLog::NET, "sending: %s (%d bytes) peer=%d%s\n",  SanitizeString(msg.m_type), nMessageSize, pnode->GetId(), fLogIPs ? ", peeraddr=" + pnode->addr.ToString() : "");
+    LogPrint(BCLog::NET, "sending: %s (%d bytes) peer=%d%s\n",  SanitizeString(msg.m_type), nMessageSize, pnode->GetId(), fLogIPs ? ", peeraddr=" + pnode->addr.ToString() : "");
     if (gArgs.GetBoolArg("-capturemessages", false)) {
         CaptureMessage(pnode->addr, msg.m_type, msg.data, /* incoming */ false);
     }

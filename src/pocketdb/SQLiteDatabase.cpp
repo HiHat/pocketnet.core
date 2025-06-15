@@ -22,7 +22,7 @@ namespace PocketDb
         // invoked."
         // Assert that this is the case:
         assert(arg == nullptr);
-        LogPrintCategory(BCLog::WARN, "%s, error: %d; Message: %s\n", sqlite3_errstr(code), code, msg);
+        LogPrint(BCLog::WARN, "%s, error: %d; Message: %s\n", sqlite3_errstr(code), code, msg);
     }
 
     static void InitializeSqlite()
@@ -138,7 +138,7 @@ namespace PocketDb
             {
                 token = sql.substr(0, pos);
 
-                LogPrintCategory(BCLog::MIGRATION, "Migration Sqlite database `%s` structure..\n---\n%s\n---\n", m_file_path, token);
+                LogPrint(BCLog::MIGRATION, "Migration Sqlite database `%s` structure..\n---\n%s\n---\n", m_file_path, token);
 
                 BeginTransaction();
 

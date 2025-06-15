@@ -47,7 +47,7 @@ public:
         if (m_log_category == BCLog::LogFlags::ALL) {
             LogPrintf("%s\n", full_msg);
         } else {
-            LogPrintCategory(m_log_category, "%s\n", full_msg);
+            LogPrint(m_log_category, "%s\n", full_msg);
         }
     }
 

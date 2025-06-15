@@ -437,7 +437,7 @@ static std::string Socks5ErrorString(uint8_t err)
 static bool Socks5(const std::string& strDest, int port, const ProxyCredentials *auth, const Sock& sock)
 {
     IntrRecvError recvr;
-    LogPrintCategory(BCLog::NET, "SOCKS5 connecting %s\n", strDest);
+    LogPrint(BCLog::NET, "SOCKS5 connecting %s\n", strDest);
     if (strDest.size() > 255) {
         return error("Hostname too long");
     }
@@ -478,7 +478,7 @@ static bool Socks5(const std::string& strDest, int port, const ProxyCredentials 
         if (ret != (ssize_t)vAuth.size()) {
             return error("Error sending authentication to proxy");
         }
-        LogPrintCategory(BCLog::PROXY, "SOCKS5 sending proxy authentication %s:%s\n", auth->username, auth->password);
+        LogPrint(BCLog::PROXY, "SOCKS5 sending proxy authentication %s:%s\n", auth->username, auth->password);
         uint8_t pchRetA[2];
         if ((recvr = InterruptibleRecv(pchRetA, 2, SOCKS5_RECV_TIMEOUT, sock)) != IntrRecvError::OK) {
             return error("Error reading proxy authentication response");
@@ -549,7 +549,7 @@ static bool Socks5(const std::string& strDest, int port, const ProxyCredentials 
     if ((recvr = InterruptibleRecv(pchRet3, 2, SOCKS5_RECV_TIMEOUT, sock)) != IntrRecvError::OK) {
         return error("Error reading from proxy");
     }
-    LogPrintCategory(BCLog::NET, "SOCKS5 connected %s\n", strDest);
+    LogPrint(BCLog::NET, "SOCKS5 connected %s\n", strDest);
     return true;
 }
 
@@ -609,7 +609,7 @@ static void LogConnectFailure(bool manual_connection, const char* fmt, const Arg
     if (manual_connection) {
         LogPrintf("%s\n", error_message);
     } else {
-        LogPrintCategory(BCLog::NET, "%s\n", error_message);
+        LogPrint(BCLog::NET, "%s\n", error_message);
     }
 }
 
@@ -652,7 +652,7 @@ bool ConnectSocketDirectly(const CService &addrConnect, const Sock& sock, int nT
                           NetworkErrorString(WSAGetLastError()));
                 return false;
             } else if (occurred == 0) {
-                LogPrintCategory(BCLog::NET, "connection attempt to %s timed out\n", addrConnect.ToString());
+                LogPrint(BCLog::NET, "connection attempt to %s timed out\n", addrConnect.ToString());
                 return false;
             }
 

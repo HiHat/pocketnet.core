@@ -1172,7 +1172,7 @@ void CWallet::SyncTransaction(const CTransactionRef& ptx, CWalletTx::Confirmatio
 					LogPrintf("SyncTransaction : Warning: Could not find %s in wallet. Trying to refund someone else's tx?\n", ptx->GetHash().ToString());
 				}
 
-				LogPrintCategory(BCLog::WALLET, "SyncTransaction : Refunding inputs of orphan tx %s\n", ptx->GetHash().ToString());
+				LogPrint(BCLog::WALLET, "SyncTransaction : Refunding inputs of orphan tx %s\n", ptx->GetHash().ToString());
 				MarkInputsDirty(ptx);
 			}
 		}
@@ -1191,7 +1191,7 @@ void CWallet::SyncTransaction(const CTransactionRef& ptx, CWalletTx::Confirmatio
 
 	if (!update_tx && ptx->IsCoinStake() && IsFromMe(*ptx)) {
 		AbandonTransaction(ptx->GetHash());
-		LogPrintCategory(BCLog::WALLET, "SyncTransaction : Removing tx %s from mapTxSpends\n", ptx->GetHash().ToString());
+		LogPrint(BCLog::WALLET, "SyncTransaction : Removing tx %s from mapTxSpends\n", ptx->GetHash().ToString());
 		for (auto & txin : ptx->vin) {
 			mapTxSpends.erase(txin.prevout);
 		}
@@ -4833,13 +4833,13 @@ bool CWallet::CreateCoinStake(const FillableSigningProvider& keystore, unsigned 
 	int64_t nValueIn = 0;
 
 	if (nBalance < Params().GetConsensus().nStakeMinimumThreshold) {
-		LogPrintCategory(BCLog::STAKEMODIF, "CreateCoinStake : balance (%d) < nStakeMinimumThreshold (%d)\n", nBalance, Params().GetConsensus().nStakeMinimumThreshold);
+		LogPrint(BCLog::STAKEMODIF, "CreateCoinStake : balance (%d) < nStakeMinimumThreshold (%d)\n", nBalance, Params().GetConsensus().nStakeMinimumThreshold);
 		return false;
 	}
 
 	// Select coins with suitable depth
 	if (!SelectCoinsForStaking(nBalance, txNew.nTime, setCoins, nValueIn)) {
-		LogPrintCategory(BCLog::STAKEMODIF, "No coins selected\n");
+		LogPrint(BCLog::STAKEMODIF, "No coins selected\n");
 		return false;
 	}
 
@@ -4851,7 +4851,7 @@ bool CWallet::CreateCoinStake(const FillableSigningProvider& keystore, unsigned 
 	CScript scriptPubKeyKernel;
 	CDataStream hashProofOfStakeSource(SER_GETHASH, 0);
 
-	LogPrintCategory(BCLog::STAKEMODIF, "CreateCoinStake : Selected UTXO=%d txNew.nTime=%s nSearchInterval=%ld nBits=%#010x\n", setCoins.size(), FormatISO8601DateTime(txNew.nTime), nSearchInterval, nBits);
+	LogPrint(BCLog::STAKEMODIF, "CreateCoinStake : Selected UTXO=%d txNew.nTime=%s nSearchInterval=%ld nBits=%#010x\n", setCoins.size(), FormatISO8601DateTime(txNew.nTime), nSearchInterval, nBits);
 	
 	for (auto & pcoin : setCoins) {
 		static int nMaxStakeSearchInterval = 60;
@@ -4871,7 +4871,7 @@ bool CWallet::CreateCoinStake(const FillableSigningProvider& keystore, unsigned 
 			if (CheckKernel(pindexPrev, nBits, txNew.nTime - n, prevoutStake, &nBlockTime, this, hashProofOfStakeSource))
 			{
 				// Found a kernel
-				LogPrintCategory(BCLog::STAKEMODIF, "CreateCoinStake : kernel found at txNew.nTime=%d - %d sec\n", txNew.nTime, n);
+				LogPrint(BCLog::STAKEMODIF, "CreateCoinStake : kernel found at txNew.nTime=%d - %d sec\n", txNew.nTime, n);
 				std::vector<std::vector<unsigned char>> vSolutions;
 				CScript scriptPubKeyOut;
 				scriptPubKeyKernel = pcoin.first->tx->vout[pcoin.second].scriptPubKey;
@@ -4881,16 +4881,16 @@ bool CWallet::CreateCoinStake(const FillableSigningProvider& keystore, unsigned 
 					break;
 				}
 
-				LogPrintCategory(BCLog::STAKEMODIF, "CreateCoinStake : parsed kernel type=%d\n", GetTxnOutputType(whichType));
+				LogPrint(BCLog::STAKEMODIF, "CreateCoinStake : parsed kernel type=%d\n", GetTxnOutputType(whichType));
 				if (whichType != TxoutType::PUBKEY && whichType != TxoutType::PUBKEYHASH) {
-					LogPrintCategory(BCLog::STAKEMODIF, "CreateCoinStake : no support for kernel type=\"%s\"\n", GetTxnOutputType(whichType));
+					LogPrint(BCLog::STAKEMODIF, "CreateCoinStake : no support for kernel type=\"%s\"\n", GetTxnOutputType(whichType));
 					break;  // only support pay to public key and pay to address
 				}
 				
 				if (whichType == TxoutType::PUBKEYHASH) {
 					// convert to pay to public key type
 					if (!keystore.GetKey(CKeyID(uint160(vSolutions[0])), key)) {
-						LogPrintCategory(BCLog::STAKEMODIF, "CreateCoinStake : failed to get key for kernel type=\"%s\"\n", GetTxnOutputType(whichType));
+						LogPrint(BCLog::STAKEMODIF, "CreateCoinStake : failed to get key for kernel type=\"%s\"\n", GetTxnOutputType(whichType));
 						break;  // unable to find corresponding public key
 					}
 					scriptPubKeyOut << ToByteVector(key.GetPubKey()) << OP_CHECKSIG;
@@ -4899,12 +4899,12 @@ bool CWallet::CreateCoinStake(const FillableSigningProvider& keystore, unsigned 
 				if (whichType == TxoutType::PUBKEY) {
 					std::vector<unsigned char>& vchPubKey = vSolutions[0];
 					if (!keystore.GetKey(CKeyID(Hash160(vchPubKey)), key)) {
-						LogPrintCategory(BCLog::STAKEMODIF, "CreateCoinStake : failed to get key for kernel type=\"%s\"\n", GetTxnOutputType(whichType));
+						LogPrint(BCLog::STAKEMODIF, "CreateCoinStake : failed to get key for kernel type=\"%s\"\n", GetTxnOutputType(whichType));
 						break;  // unable to find corresponding public key
 					}
 
 					if (key.GetPubKey() != CPubKey(vchPubKey)) {
-						LogPrintCategory(BCLog::STAKEMODIF, "CreateCoinStake : invalid key for kernel type=\"%s\"\n", GetTxnOutputType(whichType));
+						LogPrint(BCLog::STAKEMODIF, "CreateCoinStake : invalid key for kernel type=\"%s\"\n", GetTxnOutputType(whichType));
 						break; // keys mismatch
 					}
 
@@ -4917,7 +4917,7 @@ bool CWallet::CreateCoinStake(const FillableSigningProvider& keystore, unsigned 
 				vwtxPrev.insert(std::make_pair(pcoin.first, pcoin.second));
 				txNew.vout.push_back(CTxOut(0, scriptPubKeyOut));
 
-				LogPrintCategory(BCLog::STAKEMODIF, "CreateCoinStake : added kernel type=%d, chained tx value=%ld, tx time=%s\n", GetTxnOutputType(whichType), pcoin.first->tx->vout[pcoin.second].nValue, FormatISO8601DateTime(pcoin.first->tx->nTime));
+				LogPrint(BCLog::STAKEMODIF, "CreateCoinStake : added kernel type=%d, chained tx value=%ld, tx time=%s\n", GetTxnOutputType(whichType), pcoin.first->tx->vout[pcoin.second].nValue, FormatISO8601DateTime(pcoin.first->tx->nTime));
 				fKernelFound = true;
 				break;
 			}
@@ -4965,7 +4965,7 @@ bool CWallet::CreateCoinStake(const FillableSigningProvider& keystore, unsigned 
 	}
 
 	if (nCredit < Params().GetConsensus().nStakeMinimumThreshold) {
-		LogPrintCategory(BCLog::STAKEMODIF, "CreateCoinStake : Credit (%d) does not meet minimum threshold (%d)\n", nCredit, Params().GetConsensus().nStakeMinimumThreshold);
+		LogPrint(BCLog::STAKEMODIF, "CreateCoinStake : Credit (%d) does not meet minimum threshold (%d)\n", nCredit, Params().GetConsensus().nStakeMinimumThreshold);
 		return false;
 	}
 
@@ -4975,7 +4975,7 @@ bool CWallet::CreateCoinStake(const FillableSigningProvider& keystore, unsigned 
 	CTransaction ptxNew = CTransaction(txNew);
 	nReward = GetProofOfStakeReward(pindexPrev->nHeight + 1, nFees, Params().GetConsensus());
 	if (nReward <= 0) {
-		LogPrintCategory(BCLog::STAKEMODIF, "CreateCoinStake : The reward cannot be empty\n");
+		LogPrint(BCLog::STAKEMODIF, "CreateCoinStake : The reward cannot be empty\n");
 		return false;
 	}
 
@@ -5040,7 +5040,7 @@ bool CWallet::CreateCoinStake(const FillableSigningProvider& keystore, unsigned 
 		return error("CreateCoinStake : exceeded coinstake size limit");
 	}
 
-	LogPrintCategory(BCLog::STAKEMODIF, "Coin stake created!\n");
+	LogPrint(BCLog::STAKEMODIF, "Coin stake created!\n");
 
 	// Successfully generated coinstake
 	return true;

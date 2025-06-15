@@ -314,8 +314,8 @@ namespace Statistic
             {
                 auto chunkSize = GetCurrentSystemTime() - std::chrono::milliseconds(statLoggerSleep);
                 _latestPage = CompileStatsAsJsonSince(chunkSize, context);
-                LogPrintCategory(BCLog::STAT, msg.c_str(), statLoggerSleep / 1000, _latestPage.write(2, 1));
-                LogPrintCategory(BCLog::STATDETAIL, msg.c_str(), statLoggerSleep / 1000, _latestPage.write(1));
+                LogPrint(BCLog::STAT, msg.c_str(), statLoggerSleep / 1000, _latestPage.write(2, 1));
+                LogPrint(BCLog::STATDETAIL, msg.c_str(), statLoggerSleep / 1000, _latestPage.write(1));
 
                 RemoveSamplesBefore(chunkSize * 2);
                 m_interrupt.sleep_for(std::chrono::milliseconds{statLoggerSleep});

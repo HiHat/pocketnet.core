@@ -95,7 +95,7 @@ static bool AuthorizeRequest(HTTPRequest* req)
     // Check authorization
     std::pair<bool, std::string> authHeader = req->GetHeader("authorization");
     if (!authHeader.first) {
-        LogPrintCategory(BCLog::RPC, "WARNING: Request without authorization header\n");
+        LogPrint(BCLog::RPC, "WARNING: Request without authorization header\n");
         req->WriteHeader("WWW-Authenticate", WWW_AUTH_HEADER_DATA);
         req->WriteReply(HTTP_UNAUTHORIZED);
         return false;
@@ -138,7 +138,7 @@ static bool InitRPCAuthentication()
 
 bool StartHTTPRPC(const util::Ref& context)
 {
-    LogPrintCategory(BCLog::RPC, "Starting HTTP RPC server\n");
+    LogPrint(BCLog::RPC, "Starting HTTP RPC server\n");
     if (!InitRPCAuthentication())
         return false;
 
@@ -180,12 +180,12 @@ bool StartHTTPRPC(const util::Ref& context)
 
 void InterruptHTTPRPC()
 {
-    LogPrintCategory(BCLog::RPC, "Interrupting HTTP RPC server\n");
+    LogPrint(BCLog::RPC, "Interrupting HTTP RPC server\n");
 }
 
 void StopHTTPRPC()
 {
-    LogPrintCategory(BCLog::RPC, "Stopping HTTP RPC server\n");
+    LogPrint(BCLog::RPC, "Stopping HTTP RPC server\n");
     
     if (g_socket)
     {

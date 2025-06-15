@@ -203,7 +203,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const Optional<CS
     }
     int64_t nTime2 = GetTimeMicros();
 
-    LogPrintCategory(BCLog::BENCH,
+    LogPrint(BCLog::BENCH,
         "CreateNewBlock() packages: %.2fms (%d packages, %d updated descendants), validity: %.2fms (total %.2fms)\n",
         0.001 * (nTime1 - nTimeStart), nPackagesSelected, nDescendantsUpdated, 0.001 * (nTime2 - nTime1),
         0.001 * (nTime2 - nTimeStart));
@@ -239,7 +239,7 @@ bool BlockAssembler::TestTransaction(const CTransactionRef& tx, PocketBlockRef& 
     // Payload should be in operative table Transactions
     if (!ptx)
     {
-        LogPrintCategory(BCLog::SELECTCOINS, "Warning: build block skip transaction %s with result 'NOT FOUND'\n",
+        LogPrint(BCLog::SELECTCOINS, "Warning: build block skip transaction %s with result 'NOT FOUND'\n",
             tx->GetHash().GetHex());
 
         return false;
@@ -248,7 +248,7 @@ bool BlockAssembler::TestTransaction(const CTransactionRef& tx, PocketBlockRef& 
     // Check consensus
     if (auto[ok, result] = PocketConsensus::SocialConsensusHelper::Check(tx, ptx, ChainActive().Height() + 1); !ok)
     {
-        LogPrintCategory(BCLog::SELECTCOINS, "Warning: build block skip transaction %s with check result %d\n",
+        LogPrint(BCLog::SELECTCOINS, "Warning: build block skip transaction %s with check result %d\n",
             tx->GetHash().GetHex(), (int) result);
 
         return false;
@@ -257,7 +257,7 @@ bool BlockAssembler::TestTransaction(const CTransactionRef& tx, PocketBlockRef& 
     // Validate consensus
     if (auto[ok, result] = PocketConsensus::SocialConsensusHelper::Validate(tx, ptx, pblockTemplate, ChainActive().Height() + 1); !ok)
     {
-        LogPrintCategory(BCLog::SELECTCOINS, "Warning: build block skip transaction %s with validate result %d\n",
+        LogPrint(BCLog::SELECTCOINS, "Warning: build block skip transaction %s with validate result %d\n",
             tx->GetHash().GetHex(), (int) result);
 
         return false;
@@ -269,14 +269,14 @@ bool BlockAssembler::TestTransaction(const CTransactionRef& tx, PocketBlockRef& 
         const Coin& coin = view.AccessCoin(prevout);
         if (coin.IsSpent())
         {
-            LogPrintCategory(BCLog::SELECTCOINS, "Warning: build block skip transaction: tx - %s, prev - %s is spent\n", tx->GetHash().GetHex(), prevout.hash.GetHex());
+            LogPrint(BCLog::SELECTCOINS, "Warning: build block skip transaction: tx - %s, prev - %s is spent\n", tx->GetHash().GetHex(), prevout.hash.GetHex());
             return false;
         }
 
         // If prev is pocketnet, check that it's matured
         if (coin.IsPocketTX() && (ChainActive().Height() + 1 - coin.nHeight) < POCKETNET_MATURITY)
         {
-            LogPrintCategory(BCLog::SELECTCOINS, "Warning: build block skip transaction: tx - %s, prev - %s, %d - %d = %d < %d\n",
+            LogPrint(BCLog::SELECTCOINS, "Warning: build block skip transaction: tx - %s, prev - %s, %d - %d = %d < %d\n",
                 tx->GetHash().GetHex(), prevout.hash.GetHex(), ChainActive().Height() + 1, coin.nHeight, ChainActive().Height() + 1 - coin.nHeight, POCKETNET_MATURITY);
             return false;
         }
@@ -308,12 +308,12 @@ bool BlockAssembler::TestPackageTransactions(const CTxMemPool::setEntries& packa
     {
         if (!IsFinalTx(it->GetTx(), nHeight, nLockTimeCutoff))
         {
-            LogPrintCategory(BCLog::SELECTCOINS, "Warning: build block skip transaction: tx - %s, height - %d, locktime - %d\n", it->GetTx().GetHash().GetHex(), nHeight, nLockTimeCutoff);
+            LogPrint(BCLog::SELECTCOINS, "Warning: build block skip transaction: tx - %s, height - %d, locktime - %d\n", it->GetTx().GetHash().GetHex(), nHeight, nLockTimeCutoff);
             return false;
         }
         if (!fIncludeWitness && it->GetTx().HasWitness())
         {
-            LogPrintCategory(BCLog::SELECTCOINS, "Warning: build block skip transaction: tx - %s, height - %d, HasWitness\n", it->GetTx().GetHash().GetHex(), nHeight);
+            LogPrint(BCLog::SELECTCOINS, "Warning: build block skip transaction: tx - %s, height - %d, HasWitness\n", it->GetTx().GetHash().GetHex(), nHeight);
             return false;
         }
     }
@@ -494,7 +494,7 @@ void BlockAssembler::addPackageTxs(int& nPackagesSelected, int& nDescendantsUpda
 
         if (packageFees < minFee)
         {
-            LogPrintCategory(BCLog::SELECTCOINS, "Warning: build block skip transaction %s, fee (%s) < minFee (%s)\n", iter->GetTx().GetHash().GetHex(), packageFees, minFee);
+            LogPrint(BCLog::SELECTCOINS, "Warning: build block skip transaction %s, fee (%s) < minFee (%s)\n", iter->GetTx().GetHash().GetHex(), packageFees, minFee);
 
             if (fUsingModified)
             {
