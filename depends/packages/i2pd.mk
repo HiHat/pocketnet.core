@@ -27,7 +27,8 @@ define $(package)_stage_cmds
   cp libi2pdclient.a $($(package)_staging_prefix_dir)/lib && \
   cp libi2pdlang.a $($(package)_staging_prefix_dir)/lib && \
   mkdir -p $($(package)_staging_prefix_dir)/include/libi2pd && \
-  cp -r libi2pd/*.h?? $($(package)_staging_prefix_dir)/include/libi2pd/ && \
-  cp -r libi2pd_client/*.h $($(package)_staging_prefix_dir)/include/libi2pd/ && \
-  cp -r i18n/*.h $($(package)_staging_prefix_dir)/include/libi2pd/
+  cp libi2pd/*.h* $($(package)_staging_prefix_dir)/include/libi2pd/ && \
+  cp libi2pd_client/*.h $($(package)_staging_prefix_dir)/include/libi2pd/ && \
+  cp i18n/*.h $($(package)_staging_prefix_dir)/include/libi2pd/ && \
+  sed -i "s/LogPrint\b/I2PLogPrint/g" $($(package)_staging_prefix_dir)/include/libi2pd/*.h
 endef
