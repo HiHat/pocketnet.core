@@ -14,7 +14,8 @@
 #include <compat.h>
 #include <consensus/consensus.h>
 #include <crypto/sha256.h>
-#include <i2p.h>
+#include <node/eviction.h>
+#include <i2p/i2p.h>
 #include <net_permissions.h>
 #include <netbase.h>
 #include <node/ui_interface.h>
@@ -394,12 +395,10 @@ static CAddress GetBindAddress(const Sock& sock)
     CAddress addr_bind;
     struct sockaddr_storage sockaddr_bind;
     socklen_t sockaddr_bind_len = sizeof(sockaddr_bind);
-    if (sock != INVALID_SOCKET) {
-        if (!getsockname(sock, (struct sockaddr*)&sockaddr_bind, &sockaddr_bind_len)) {
-            addr_bind.SetSockAddr((const struct sockaddr*)&sockaddr_bind);
-        } else {
-            LogPrint(BCLog::NET, "Warning: getsockname failed\n");
-        }
+    if (!sock.GetSockName((struct sockaddr*)&sockaddr_bind, &sockaddr_bind_len)) {
+        addr_bind.SetSockAddr((const struct sockaddr*)&sockaddr_bind);
+    } else {
+        LogPrint(BCLog::NET, "Warning: getsockname failed\n");
     }
     return addr_bind;
 }
@@ -1083,8 +1082,9 @@ bool CConnman::AttemptToEvictConnection()
 
     LOCK(cs_vNodes);
     for (CNode* pnode : vNodes) {
-        if (pnode->GetId() == evicted) {
+        if (pnode->GetId() == *node_id_to_evict) {
             LogPrint(BCLog::NET, "selected %s connection for eviction peer=%d; disconnecting\n", pnode->ConnectionTypeAsString(), pnode->GetId());
+
             TRACEPOINT(net, evicted_inbound_connection,
                 pnode->GetId(),
                 pnode->GetAddrName().c_str(),
@@ -1191,7 +1191,7 @@ void CConnman::CreateNodeFromAcceptedSocket(std::unique_ptr<Sock>&& sock,
     {
         if (!AttemptToEvictConnection()) {
             // No connection to evict, disconnect the new connection
-            LogPrint(BCLog::NET, "failed to find an eviction candidate - connection dropped (full)\n");
+            LogPrint(BCLog::NET, "failed to find an eviction candidate - connection from %s dropped (max inbound connections reached: %d)\n", addr.ToString(), nMaxInbound);
             return;
         }
     }
@@ -1249,7 +1249,7 @@ void CConnman::DisconnectNodes()
             // Disconnect any connected nodes
             for (CNode* pnode : vNodes) {
                 if (!pnode->fDisconnect) {
-                    LogPrint(BCLog::NET, "Network not active, dropping peer=%d\n", pnode->GetId());
+                    LogPrint(BCLog::NET, "Network not active, dropping peer=%d%s\n", pnode->GetId(), fLogIPs ? ", peeraddr=" + pnode->addr.ToString() : "");
                     pnode->fDisconnect = true;
                 }
             }
@@ -1324,7 +1324,7 @@ bool CConnman::InactivityCheck(CNode *pnode)
 
         if (pnode->nLastRecv == 0 || pnode->nLastSend == 0)
         {
-            LogPrint(BCLog::NET, "socket no message in first %i seconds, %d %d from %d\n", m_peer_connect_timeout, pnode->nLastRecv != 0, pnode->nLastSend != 0, pnode->GetId());
+            LogPrint(BCLog::NET, "socket no message in first %i seconds, %d %d from  peer=%d%s\n", m_peer_connect_timeout, pnode->nLastRecv != 0, pnode->nLastSend != 0, pnode->GetId(), fLogIPs ? ", peeraddr=" + pnode->addr.ToString() : "");
             return true;
         }
         else if (nTime - pnode->nLastSend > TIMEOUT_INTERVAL)
@@ -1339,7 +1339,7 @@ bool CConnman::InactivityCheck(CNode *pnode)
         }
         else if (!pnode->fSuccessfullyConnected)
         {
-            LogPrint(BCLog::NET, "version handshake timeout from %d\n", pnode->GetId());
+            LogPrint(BCLog::NET, "version handshake timeout from peer=%d%s\n", pnode->GetId(), fLogIPs ? ", peeraddr=" + pnode->addr.ToString() : "");
             return true;
         }
 

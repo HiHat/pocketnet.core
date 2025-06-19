@@ -2504,7 +2504,7 @@ bool CChainState::ConnectBlock(const CBlock& block, const PocketBlockRef& pocket
             return state.Invalid(BlockValidationResult::BLOCK_INCOMPLETE, "failed-validate-social-consensus", "", true);
         }
         
-        LogPrint(BCLog::CONSENSUS, "    Block validated: %d BH: %s\n", pindex->nHeight, block.GetHash().GetHex());
+        LogPrint(BCLog::CONSENSUS, "    Block:%s validated at height:%d\n", block.GetHash().GetHex(), pindex->nHeight);
 
         nTime5 = GetTimeMicros();
         nTimeVerify += nTime5 - nTime4;
@@ -4483,7 +4483,7 @@ bool ChainstateManager::ProcessNewBlock(BlockValidationState& state, const CChai
                 *fNewBlock = false;
             }
                 
-            LogPrint(BCLog::CONSENSUS, "    Block checked with result %d: Height: %d BH: %s\n", (ret ? 1 : 0), checkHeight, hash);
+            LogPrint(BCLog::CONSENSUS, "    Block:%s checked at height:%d with result:%d\n", hash, checkHeight, (ret ? 1 : 0));
         }
 
         int64_t nTime4 = GetTimeMicros();

@@ -211,7 +211,7 @@ static inline void LogPrintf_(const BCLog::LogFlags flag, const BCLog::Level lev
             LogPrintf_(category, BCLog::Level::None, __VA_ARGS__);          \
         }                                    \
     } while (0)
-#define LogPrintLevel(level, category, ...)               \
+#define LogPrintLevel(category, level, ...)               \
     do {                                                  \
         if (LogAcceptCategory((category))) {              \
             LogPrintf_(category, level, __VA_ARGS__); \

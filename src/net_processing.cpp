@@ -535,32 +535,6 @@ static void UpdatePreferredDownload(const CNode& node, CNodeState* state) EXCLUS
     nPreferredDownload += state->fPreferredDownload;
 }
 
-static void PushNodeVersion(CNode& pnode, CConnman& connman, int64_t nTime)
-{
-    // Note that pnode->GetLocalServices() is a reflection of the local
-    // services we were offering when the CNode object was created for this
-    // peer.
-    ServiceFlags nLocalNodeServices = pnode.GetLocalServices();
-    uint64_t nonce = pnode.GetLocalNonce();
-    int nNodeStartingHeight = pnode.GetMyStartingHeight();
-    NodeId nodeid = pnode.GetId();
-    CAddress addr = pnode.addr;
-
-    CAddress addrYou = addr.IsRoutable() && !IsProxy(addr) && addr.IsAddrV1Compatible() ?
-                           addr :
-                           CAddress(CService(), addr.nServices);
-    CAddress addrMe = CAddress(CService(), nLocalNodeServices);
-
-    connman.PushMessage(&pnode, CNetMsgMaker(INIT_PROTO_VERSION).Make(NetMsgType::VERSION, PROTOCOL_VERSION, (uint64_t)nLocalNodeServices, nTime, addrYou, addrMe,
-            nonce, strSubVersion, nNodeStartingHeight, ::g_relay_txes && pnode.m_tx_relay != nullptr));
-
-    if (fLogIPs) {
-        LogPrint(BCLog::NET, "send version message: version %d, blocks=%d, us=%s, them=%s, peer=%d\n", PROTOCOL_VERSION, nNodeStartingHeight, addrMe.ToString(), addrYou.ToString(), nodeid);
-    } else {
-        LogPrint(BCLog::NET, "send version message: version %d, blocks=%d, us=%s, peer=%d\n", PROTOCOL_VERSION, nNodeStartingHeight, addrMe.ToString(), nodeid);
-    }
-}
-
 // Returns a bool indicating whether we requested this block.
 // Also used if a block was /not/ received and timed out or started with another peer
 static bool MarkBlockAsReceived(const uint256& hash) EXCLUSIVE_LOCKS_REQUIRED(cs_main) {
@@ -703,11 +677,10 @@ static void MaybeSetPeerAsAnnouncingHeaderAndIDs(NodeId nodeid, CConnman& connma
     connman.ForNode(nodeid, [&connman](CNode* pfrom) EXCLUSIVE_LOCKS_REQUIRED(::cs_main) {
         AssertLockHeld(::cs_main);
 
-	LogPrint(BCLog::NET, "%s: lNodesAnnouncingHeaderAndIDs.size()=%d peer=%d%s\n",
-                        __func__,
-                        lNodesAnnouncingHeaderAndIDs.size(),
-                        pfrom->GetId(),
-                        fLogIPs ? ", peeraddr=" + pfrom->addr.ToString() : "");
+//      LogPrint(BCLog::NET, "MaybeSetPeerAsAnnouncingHeaderAndIDs(): lNodesAnnouncingHeaderAndIDs.size()=%d peer=%d%s\n",
+//                        lNodesAnnouncingHeaderAndIDs.size(),
+//                        pfrom->GetId(),
+//                        fLogIPs ? ", peeraddr=" + pfrom->addr.ToString() : "");
 
         if (lNodesAnnouncingHeaderAndIDs.size() >= 3) {
             // As per BIP152, we only get 3 of our peers to announce
@@ -1562,7 +1535,7 @@ void PeerManager::NewPoSValidBlock(const CBlockIndex *pindex, const std::shared_
         // but we don't think they have this one, go ahead and announce it
         if (state.m_requested_hb_cmpctblocks && !PeerHasHeader(&state, pindex) && PeerHasHeader(&state, pindex->pprev)) {
 
-            LogPrint(BCLog::NET, "%s: sending header-and-ids %s to peer=%d%s\n", "PeerManager::NewPoSValidBlock",
+            LogPrint(BCLog::NET, "PeerManager::NewPoSValidBlock(): sending header-and-ids %s to peer=%d%s\n",
                     hashBlock.ToString(), pnode->GetId(), fLogIPs ? ", peeraddr=" + pnode->addr.ToString() : "");
 
             m_connman.PushMessage(pnode, msgMaker.Make(NetMsgType::CMPCTBLOCK, *pcmpctblock, pocketBlockData));
@@ -2176,7 +2149,8 @@ void PeerManager::ProcessHeadersMessage(CNode& pfrom, const Peer& peer,
             // Headers message had its maximum size; the peer may have more headers.
             // TODO: optimize: if pindexLast is an ancestor of ::ChainActive().Tip or pindexBestHeader, continue
             // from there instead.
-            LogPrint(BCLog::NET, "more getheaders (%d) to end to peer=%d (startheight:%d)\n", pindexLast->nHeight, pfrom.GetId(), pfrom.nStartingHeight);
+            LogPrint(BCLog::NET, "more getheaders (%d) to end to peer=%d (startheight:%d)\n",
+                                 pindexLast->nHeight, pfrom.GetId(), peer.m_starting_height);
             m_connman.PushMessage(&pfrom, msgMaker.Make(NetMsgType::GETHEADERS, ::ChainActive().GetLocator(pindexLast), uint256()));
         }
 
@@ -2831,7 +2805,7 @@ void PeerManager::ProcessMessage(CNode& pfrom, const std::string& msg_type, CDat
                       pfrom.IsBlockOnlyConn() ? "block-relay" : "full-relay");
         } else {
             LogPrint((BCLog::LogFlags)(BCLog::NET|BCLog::CONSENSUS), "New inbound peer connected: version=%s, blocks=%d, peer=%d%s\n",
-                      pfrom.cleanSubVer, pfrom.nStartingHeight,
+                      pfrom.cleanSubVer, peer->m_starting_height,
                       pfrom.GetId(), (fLogIPs ? strprintf(", peeraddr=%s", pfrom.addr.ToString()) : ""));
         }
 
@@ -3185,7 +3159,7 @@ void PeerManager::ProcessMessage(CNode& pfrom, const std::string& msg_type, CDat
                 // When this block is requested, we'll send an inv that'll
                 // trigger the peer to getblocks the next batch of inventory.
                 LogPrint(BCLog::NET, "  getblocks stopping at limit %d %s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
-                pfrom.hashContinue = pindex->GetBlockHash();
+                WITH_LOCK(peer->m_block_inv_mutex, {peer->m_continuation_block = pindex->GetBlockHash();});
                 break;
             }
         }
@@ -4658,7 +4632,7 @@ bool PeerManager::SendMessages(CNode* pto)
                 if (pindexStart->pprev)
                     pindexStart = pindexStart->pprev;
                 LogPrint(BCLog::NET, "%s: initial getheaders (%d) to peer=%d%s (startheight:%d)\n", __func__,
-                    pindexStart->nHeight, pto->GetId(), (fLogIPs ? strprintf(", peeraddr=%s", pto->addr.ToString()) : ""), pto->nStartingHeight);
+                    pindexStart->nHeight, pto->GetId(), (fLogIPs ? strprintf(", peeraddr=%s", pto->addr.ToString()) : ""), peer->m_starting_height);
                 m_connman.PushMessage(pto, msgMaker.Make(NetMsgType::GETHEADERS, ::ChainActive().GetLocator(pindexStart), uint256()));
             }
         }
@@ -4786,7 +4760,7 @@ bool PeerManager::SendMessages(CNode* pto)
 
                     // If the peer's chain has this block, don't inv it back.
                     if (!PeerHasHeader(&state, pindex)) {
-                        pto->vInventoryBlockToSend.push_back(hashToAnnounce);
+                        peer->m_blocks_for_inv_relay.push_back(hashToAnnounce);
                         LogPrint(BCLog::NET, "%s: sending inv peer=%d%s hash=%s\n", __func__,
                             pto->GetId(), fLogIPs ? ", peeraddr=" + pto->addr.ToString() : "", hashToAnnounce.ToString());
                     }

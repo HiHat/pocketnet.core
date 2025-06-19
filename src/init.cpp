@@ -424,7 +424,7 @@ static void OnRPCStopped()
     rpc_notify_block_change_connection.disconnect();
     RPCNotifyBlockChange(nullptr);
     g_best_block_cv.notify_all();
-    LogPrintCategory(BCLog::RPC, "RPC stopped.\n");
+    LogPrint(BCLog::RPC, "RPC stopped.\n");
 }
 
 void SetupServerArgs(NodeContext& node)
@@ -879,7 +879,7 @@ static void ThreadImport(ChainstateManager& chainman, const util::Ref& context, 
 
                     PocketServices::ChainPostProcessing::Index(block, pblockindex->nHeight);
 
-                    LogPrintCategory(BCLog::SYNC, "Indexing pocketnet part at height %d\n", pblockindex->nHeight);
+                    LogPrint(BCLog::SYNC, "Indexing pocketnet part at height %d\n", pblockindex->nHeight);
                     i += 1;
                 }
                 catch (std::exception& e)

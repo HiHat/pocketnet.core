@@ -3,10 +3,10 @@
 // http://www.apache.org/licenses/LICENSE-2.0
 
 #include "i2pdw.h"
-#include "logging.h"
+#include <logging.h>
 #include "util/system.h"
 #include <libi2pd/NetDb.hpp>
-#include <libi2pd/Log.h>
+// #include <libi2pd/Log.h>
 #include <libi2pd/Config.h>
 #include <libi2pd/Transports.h>
 #include <libi2pd/Tunnel.h>
@@ -70,26 +70,26 @@ namespace i2pdw {
 
 // 		i2p::log::Logger().SetLogLevel(loglevel);
 // 		if (logstream) {
-// 			LogPrintCategory(eLogInfo, "Log: Sending messages to std::ostream");
+// 			LogPrint(eLogInfo, "Log: Sending messages to std::ostream");
 // 			i2p::log::Logger().SendTo (logstream);
 // 		} else if (logs == "file") {
 // 			if (logfile == "")
 // 				logfile = i2p::fs::DataDirPath("i2pd.log");
-// 			LogPrintCategory(eLogInfo, "Log: Sending messages to ", logfile);
+// 			LogPrint(eLogInfo, "Log: Sending messages to ", logfile);
 // 			i2p::log::Logger().SendTo (logfile);
 // #ifndef _WIN32
 // 		} else if (logs == "syslog") {
-// 			LogPrintCategory(eLogInfo, "Log: Sending messages to syslog");
+// 			LogPrint(eLogInfo, "Log: Sending messages to syslog");
 // 			i2p::log::Logger().SendTo("i2pd", LOG_DAEMON);
 // #endif
 // 		} else {
 // 			// use stdout -- default
 // 		}
 
-		LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "i2pd v%s (%s) starting...\n", VERSION, I2P_VERSION);
-		LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "FS: Main config file: %s\n", config);
-		LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "FS: Data directory: %s\n", datadir);
-		LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "FS: Certificates directory: %s\n", certsdir);
+		LogPrint(BCLog::I2P, "i2pd v%s (%s) starting...\n", VERSION, I2P_VERSION);
+		LogPrint(BCLog::I2P, "FS: Main config file: %s\n", config);
+		LogPrint(BCLog::I2P, "FS: Data directory: %s\n", datadir);
+		LogPrint(BCLog::I2P, "FS: Certificates directory: %s\n", certsdir);
 
 		bool precomputation; i2p::config::GetOption("precomputation.elgamal", precomputation);
 		bool ssu; i2p::config::GetOption("ssu", ssu);
@@ -112,7 +112,7 @@ namespace i2pdw {
 		bool isFloodfill; i2p::config::GetOption("floodfill", isFloodfill);
 		if (isFloodfill)
 		{
-			LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Router configured as floodfill\n");
+			LogPrint(BCLog::I2P, "Daemon: Router configured as floodfill\n");
 			i2p::context.SetFloodfill (true);
 		}
 		else
@@ -132,7 +132,7 @@ namespace i2pdw {
 			if (bandwidth.length () == 1 && ((bandwidth[0] >= 'K' && bandwidth[0] <= 'P') || bandwidth[0] == 'X' ))
 			{
 				i2p::context.SetBandwidth (bandwidth[0]);
-				LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Bandwidth set to %d KBps\n", i2p::context.GetBandwidthLimit ());
+				LogPrint(BCLog::I2P, "Daemon: Bandwidth set to %d KBps\n", i2p::context.GetBandwidthLimit ());
 			}
 			else
 			{
@@ -140,23 +140,23 @@ namespace i2pdw {
 				if (value > 0)
 				{
 					i2p::context.SetBandwidth (value);
-					LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Bandwidth set to %d KBps\n", i2p::context.GetBandwidthLimit ());
+					LogPrint(BCLog::I2P, "Daemon: Bandwidth set to %d KBps\n", i2p::context.GetBandwidthLimit ());
 				}
 				else
 				{
-					LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Unexpected bandwidth %s. Set to 'low'\n", bandwidth);
+					LogPrint(BCLog::I2P, "Daemon: Unexpected bandwidth %s. Set to 'low'\n", bandwidth);
 					i2p::context.SetBandwidth (i2p::data::CAPS_FLAG_LOW_BANDWIDTH2);
 				}
 			}
 		}
 		else if (isFloodfill)
 		{
-			LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Floodfill bandwidth set to 'extra'\n");
+			LogPrint(BCLog::I2P, "Daemon: Floodfill bandwidth set to 'extra'\n");
 			i2p::context.SetBandwidth (i2p::data::CAPS_FLAG_EXTRA_BANDWIDTH2);
 		}
 		else
 		{
-			LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: bandwidth set to 'low'\n");
+			LogPrint(BCLog::I2P, "Daemon: bandwidth set to 'low'\n");
 			i2p::context.SetBandwidth (i2p::data::CAPS_FLAG_LOW_BANDWIDTH2);
 		}
 
@@ -166,12 +166,12 @@ namespace i2pdw {
 		std::string family; i2p::config::GetOption("family", family);
 		i2p::context.SetFamily (family);
 		if (family.length () > 0)
-			LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Router family set to %s\n", family);
+			LogPrint(BCLog::I2P, "Daemon: Router family set to %s\n", family);
 
 		bool trust; i2p::config::GetOption("trust.enabled", trust);
 		if (trust)
 		{
-			LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Explicit trust enabled\n");
+			LogPrint(BCLog::I2P, "Daemon: Explicit trust enabled\n");
 			std::string fam; i2p::config::GetOption("trust.family", fam);
 			std::string routers; i2p::config::GetOption("trust.routers", routers);
 			bool restricted = false;
@@ -201,18 +201,18 @@ namespace i2pdw {
 					pos = comma + 1;
 				}
 				while (comma != std::string::npos);
-				LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Setting restricted routes to use %d trusted routers\n", idents.size());
+				LogPrint(BCLog::I2P, "Daemon: Setting restricted routes to use %d trusted routers\n", idents.size());
 				i2p::transport::transports.RestrictRoutesToRouters(idents);
 				restricted = idents.size() > 0;
 			}
 			if(!restricted)
-				LogPrintLevel(BCLog::Level::Error, BCLog::I2P, "Daemon: No trusted routers of families specified\n");
+				LogPrintLevel(BCLog::I2P, BCLog::Level::Error, "Daemon: No trusted routers of families specified\n");
 		}
 
 		bool hidden; i2p::config::GetOption("trust.hidden", hidden);
 		if (hidden)
 		{
-			LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Hidden mode enabled\n");
+			LogPrint(BCLog::I2P, "Daemon: Hidden mode enabled\n");
 			i2p::context.SetHidden(true);
 		}
 
@@ -228,7 +228,7 @@ namespace i2pdw {
 		m_runned = true;
 	
 		i2p::log::Logger().Start();
-		LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Starting NetDB\n");
+		LogPrint(BCLog::I2P, "Daemon: Starting NetDB\n");
 		i2p::data::netdb.Start();
 
 		// bool upnp; i2p::config::GetOption("upnp.enabled", upnp);
@@ -246,16 +246,16 @@ namespace i2pdw {
 
 		bool ntcp2; i2p::config::GetOption("ntcp2.enabled", ntcp2);
 		bool ssu2; i2p::config::GetOption("ssu2.enabled", ssu2);
-		LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Starting Transports\n");
-		if(!ssu2) LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: SSU2 disabled\n");
-		if(!ntcp2) LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: NTCP2 disabled\n");
+		LogPrint(BCLog::I2P, "Daemon: Starting Transports\n");
+		if(!ssu2) LogPrint(BCLog::I2P, "Daemon: SSU2 disabled\n");
+		if(!ntcp2) LogPrint(BCLog::I2P, "Daemon: NTCP2 disabled\n");
 
 		i2p::transport::transports.Start(ntcp2, ssu2);
 		if (i2p::transport::transports.IsBoundSSU2() || i2p::transport::transports.IsBoundNTCP2())
-			LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Transports started\n");
+			LogPrint(BCLog::I2P, "Daemon: Transports started\n");
 		else
 		{
-			LogPrintLevel(BCLog::Level::Error, BCLog::I2P, "Daemon: Failed to start Transports\n");
+			LogPrintLevel(BCLog::I2P, BCLog::Level::Error, "Daemon: Failed to start Transports\n");
 			/** shut down netdb right away */
 			i2p::transport::transports.Stop();
 			i2p::data::netdb.Stop();
@@ -266,7 +266,7 @@ namespace i2pdw {
 		// if (http) {
 		// 	std::string httpAddr; i2p::config::GetOption("http.address", httpAddr);
 		// 	uint16_t    httpPort; i2p::config::GetOption("http.port", httpPort);
-		// 	LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Starting Webconsole at ", httpAddr, ":", httpPort);
+		// 	LogPrint(BCLog::I2P, "Daemon: Starting Webconsole at ", httpAddr, ":", httpPort);
 		// 	try
 		// 	{
 		// 		d.httpServer = std::unique_ptr<i2p::http::HTTPServer>(new i2p::http::HTTPServer(httpAddr, httpPort));
@@ -279,13 +279,13 @@ namespace i2pdw {
 		// 	}
 		// }
 
-		LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Starting Tunnels\n");
+		LogPrint(BCLog::I2P, "Daemon: Starting Tunnels\n");
 		i2p::tunnel::tunnels.Start();
 
-		LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Starting Router context\n");
+		LogPrint(BCLog::I2P, "Daemon: Starting Router context\n");
 		i2p::context.Start();
 
-		LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Starting Client\n");
+		LogPrint(BCLog::I2P, "Daemon: Starting Client\n");
 		i2p::client::context.Start();
 
 		// // I2P Control Protocol
@@ -293,7 +293,7 @@ namespace i2pdw {
 		// if (i2pcontrol) {
 		// 	std::string i2pcpAddr; i2p::config::GetOption("i2pcontrol.address", i2pcpAddr);
 		// 	uint16_t    i2pcpPort; i2p::config::GetOption("i2pcontrol.port",    i2pcpPort);
-		// 	LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Starting I2PControl at ", i2pcpAddr, ":", i2pcpPort);
+		// 	LogPrint(BCLog::I2P, "Daemon: Starting I2PControl at ", i2pcpAddr, ":", i2pcpPort);
 		// 	try
 		// 	{
 		// 		d.m_I2PControlService = std::unique_ptr<i2p::client::I2PControlService>(new i2p::client::I2PControlService (i2pcpAddr, i2pcpPort));
@@ -317,12 +317,12 @@ namespace i2pdw {
 			return true;
 		}
 
-		LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Shutting down\n");
-		LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Stopping Client\n");
+		LogPrint(BCLog::I2P, "Daemon: Shutting down\n");
+		LogPrint(BCLog::I2P, "Daemon: Stopping Client\n");
 		i2p::client::context.Stop();
-		LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Stopping Router context\n");
+		LogPrint(BCLog::I2P, "Daemon: Stopping Router context\n");
 		i2p::context.Stop();
-		LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Stopping Tunnels\n");
+		LogPrint(BCLog::I2P, "Daemon: Stopping Tunnels\n");
 		i2p::tunnel::tunnels.Stop();
 
 		// if (d.UPnP)
@@ -337,18 +337,18 @@ namespace i2pdw {
 		// 	d.m_NTPSync = nullptr;
 		// }
 
-		LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Stopping Transports\n");
+		LogPrint(BCLog::I2P, "Daemon: Stopping Transports\n");
 		i2p::transport::transports.Stop();
-		LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Stopping NetDB\n");
+		LogPrint(BCLog::I2P, "Daemon: Stopping NetDB\n");
 		i2p::data::netdb.Stop();
 		// if (d.httpServer) {
-		// 	LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Stopping HTTP Server");
+		// 	LogPrint(BCLog::I2P, "Daemon: Stopping HTTP Server");
 		// 	d.httpServer->Stop();
 		// 	d.httpServer = nullptr;
 		// }
 		// if (d.m_I2PControlService)
 		// {
-		// 	LogPrintLevel(BCLog::Level::Info, BCLog::I2P, "Daemon: Stopping I2PControl");
+		// 	LogPrint(BCLog::I2P, "Daemon: Stopping I2PControl");
 		// 	d.m_I2PControlService->Stop ();
 		// 	d.m_I2PControlService = nullptr;
 		// }

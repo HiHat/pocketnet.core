@@ -248,8 +248,8 @@ bool BlockAssembler::TestTransaction(const CTransactionRef& tx, PocketBlockRef& 
     // Check consensus
     if (auto[ok, result] = PocketConsensus::SocialConsensusHelper::Check(tx, ptx, ChainActive().Height() + 1); !ok)
     {
-        LogPrint(BCLog::SELECTCOINS, "Warning: build block skip transaction %s with check result %d\n",
-            tx->GetHash().GetHex(), (int) result);
+        LogPrint(BCLog::SELECTCOINS, "Warning: build block skip transaction %s type %d (%s) with check result %d (%s)\n",
+            tx->GetHash().GetHex(), *ptx->GetType(), TransactionHelper::TxStringType((TxType) *ptx->GetType()), (int) result, PocketConsensus::SocialConsensusResultString((PocketConsensus::SocialConsensusResult) result));
 
         return false;
     }
@@ -257,8 +257,8 @@ bool BlockAssembler::TestTransaction(const CTransactionRef& tx, PocketBlockRef& 
     // Validate consensus
     if (auto[ok, result] = PocketConsensus::SocialConsensusHelper::Validate(tx, ptx, pblockTemplate, ChainActive().Height() + 1); !ok)
     {
-        LogPrint(BCLog::SELECTCOINS, "Warning: build block skip transaction %s with validate result %d\n",
-            tx->GetHash().GetHex(), (int) result);
+        LogPrint(BCLog::SELECTCOINS, "Warning: build block skip transaction %s type %d (%s) with validate result %d (%s)\n",
+            tx->GetHash().GetHex(), *ptx->GetType(), TransactionHelper::TxStringType((TxType) *ptx->GetType()), (int) result, PocketConsensus::SocialConsensusResultString((PocketConsensus::SocialConsensusResult) result));
 
         return false;
     }
@@ -276,7 +276,7 @@ bool BlockAssembler::TestTransaction(const CTransactionRef& tx, PocketBlockRef& 
         // If prev is pocketnet, check that it's matured
         if (coin.IsPocketTX() && (ChainActive().Height() + 1 - coin.nHeight) < POCKETNET_MATURITY)
         {
-            LogPrint(BCLog::SELECTCOINS, "Warning: build block skip transaction: tx - %s, prev - %s, %d - %d = %d < %d\n",
+            LogPrint(BCLog::SELECTCOINS, "Warning: build block skip transaction due to low maturity: tx - %s, prev - %s, %d - %d = %d < %d\n",
                 tx->GetHash().GetHex(), prevout.hash.GetHex(), ChainActive().Height() + 1, coin.nHeight, ChainActive().Height() + 1 - coin.nHeight, POCKETNET_MATURITY);
             return false;
         }
@@ -308,7 +308,7 @@ bool BlockAssembler::TestPackageTransactions(const CTxMemPool::setEntries& packa
     {
         if (!IsFinalTx(it->GetTx(), nHeight, nLockTimeCutoff))
         {
-            LogPrint(BCLog::SELECTCOINS, "Warning: build block skip transaction: tx - %s, height - %d, locktime - %d\n", it->GetTx().GetHash().GetHex(), nHeight, nLockTimeCutoff);
+            LogPrint(BCLog::SELECTCOINS, "Warning: build block skip transaction: tx - %s, height - %d, locktime - %s\n", it->GetTx().GetHash().GetHex(), nHeight, FormatISO8601DateTime(nLockTimeCutoff));
             return false;
         }
         if (!fIncludeWitness && it->GetTx().HasWitness())
