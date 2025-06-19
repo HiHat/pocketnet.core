@@ -14,7 +14,7 @@ $(package)_ldlibs+=$($($(1)_type)_prefix)/lib/libboost_program_options-mt-x64.a
 $(package)_ldlibs+=$($($(1)_type)_prefix)/lib/libssl.a
 $(package)_ldlibs+=$($($(1)_type)_prefix)/lib/libcrypto.a
 $(package)_ldlibs+=$($($(1)_type)_prefix)/lib/libz.a
-$(package)_ldlibs+=$($($(1)_type)_prefix)/lib/libminiupnpc.a
+$(package)_ldlibs+=$($($(1)_type)_prefix)/lib/libminiupnpc.a -lpthread
 endef
 
 define $(package)_build_cmds
@@ -27,7 +27,7 @@ define $(package)_stage_cmds
   cp libi2pdclient.a $($(package)_staging_prefix_dir)/lib && \
   cp libi2pdlang.a $($(package)_staging_prefix_dir)/lib && \
   mkdir -p $($(package)_staging_prefix_dir)/include/libi2pd && \
-  cp -r libi2pd/* $($(package)_staging_prefix_dir)/include/libi2pd/ && \
-  cp -r libi2pd_client/* $($(package)_staging_prefix_dir)/include/libi2pd/ && \
-  cp -r i18n/* $($(package)_staging_prefix_dir)/include/libi2pd/
+  cp -r libi2pd/*.h?? $($(package)_staging_prefix_dir)/include/libi2pd/ && \
+  cp -r libi2pd_client/*.h $($(package)_staging_prefix_dir)/include/libi2pd/ && \
+  cp -r i18n/*.h $($(package)_staging_prefix_dir)/include/libi2pd/
 endef

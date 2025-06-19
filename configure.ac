@@ -593,6 +593,9 @@ AC_CHECK_LIB([crypto],      [main],CRYPTO_LIBS=-lcrypto, AC_MSG_ERROR(libcrypto 
 AC_CHECK_HEADER([openssl/ssl.h],, AC_MSG_ERROR(libssl headers missing),)
 AC_CHECK_LIB([ssl],         [main],SSL_LIBS=-lssl, AC_MSG_ERROR(libssl missing))
 
+AC_CHECK_HEADER([libi2pd/Config.h],, AC_MSG_ERROR(libi2pd headers missing),)
+AC_CHECK_LIB([i2pd],         [main],I2P_LIBS="-li2pdlang -li2pdclient -li2pd", AC_MSG_ERROR(libi2pd missing))
+
 case $host in
   *mingw*)
      TARGET_OS=windows
@@ -1313,6 +1316,7 @@ fi
 AX_BOOST_SYSTEM
 AX_BOOST_FILESYSTEM
 AX_BOOST_THREAD
+AX_BOOST_PROGRAM_OPTIONS
 
 dnl Opt-in to boost-process
 AS_IF([ test x$with_boost_process != x ], [ AX_BOOST_PROCESS ], [ ax_cv_boost_process=no ] )
@@ -1326,7 +1330,7 @@ dnl counter implementations. In 1.63 and later the std::atomic approach is defau
 m4_pattern_allow(DBOOST_AC_USE_STD_ATOMIC) dnl otherwise it's treated like a macro
 BOOST_CPPFLAGS="-DBOOST_SP_USE_STD_ATOMIC -DBOOST_AC_USE_STD_ATOMIC $BOOST_CPPFLAGS"
 
-BOOST_LIBS="$BOOST_LDFLAGS $BOOST_SYSTEM_LIB $BOOST_FILESYSTEM_LIB $BOOST_THREAD_LIB"
+BOOST_LIBS="$BOOST_LDFLAGS $BOOST_SYSTEM_LIB $BOOST_FILESYSTEM_LIB $BOOST_THREAD_LIB $BOOST_PROGRAM_OPTIONS_LIB"
 fi
 
 if test x$use_reduce_exports = xyes; then
@@ -1693,6 +1697,7 @@ AC_SUBST(BOOST_LIBS)
 AC_SUBST(SQLITE_LIBS)
 AC_SUBST(CRYPTO_LIBS)
 AC_SUBST(SSL_LIBS)
+AC_SUBST(I2P_LIBS)
 AC_SUBST(TESTDEFS)
 AC_SUBST(MINIUPNPC_CPPFLAGS)
 AC_SUBST(MINIUPNPC_LIBS)

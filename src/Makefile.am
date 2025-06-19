@@ -906,7 +906,7 @@ pocketcoind_SOURCES = $(pocketcoin_daemon_sources)
 pocketcoind_CPPFLAGS = $(pocketcoin_bin_cppflags)
 pocketcoind_CXXFLAGS = $(pocketcoin_bin_cxxflags)
 pocketcoind_LDFLAGS = $(pocketcoin_bin_ldflags)
-pocketcoind_LDADD = $(LIBPOCKETCOIN_SERVER) $(pocketcoin_bin_ldadd)
+pocketcoind_LDADD = $(LIBPOCKETCOIN_SERVER) $(I2P_LIBS) $(pocketcoin_bin_ldadd)
 
 pocketcoin_node_SOURCES = $(pocketcoin_daemon_sources)
 pocketcoin_node_CPPFLAGS = $(pocketcoin_bin_cppflags)

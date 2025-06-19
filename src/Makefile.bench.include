@@ -62,6 +62,7 @@ bench_bench_pocketcoin_LDADD = \
   $(LIBLEVELDB) \
   $(LIBLEVELDB_SSE42) \
   $(LIBMEMENV) \
+  $(I2P_LIBS) \
   $(BOOST_LIBS) \
   $(LIBSECP256K1) \
   $(LIBUNIVALUE) \
