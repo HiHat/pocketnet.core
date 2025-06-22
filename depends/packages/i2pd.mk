@@ -12,7 +12,8 @@ define $(package)_set_vars
 $(package)_build_opts=USE_UPNP=yes DEBUG=no USE_STATIC=yes
 #$(package)_build_opts_linux=USE_STATIC=yes
 
-$(package)_cxxflags=-std=c++17 -fvisibility=hidden -I$($($(1)_type)_prefix)/include
+$(package)_cxxflags=-I$($($(1)_type)_prefix)/include
+$(package)_cxxflags_darwin=-std=c++17 -fvisibility=hidden
 
 #$(package)_cppflags=-I$($($(1)_type)_prefix)/include
 
