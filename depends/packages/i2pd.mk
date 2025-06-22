@@ -10,26 +10,29 @@ $(package)_dependencies=boost openssl zlib miniupnpc
 
 define $(package)_set_vars
 $(package)_build_opts=USE_UPNP=yes DEBUG=no USE_STATIC=yes
-$(package)_build_opts_linux=USE_STATIC=yes
+#$(package)_build_opts_linux=USE_STATIC=yes
 
-$(package)_cxxflags=-I$($($(1)_type)_prefix)/include
-$(package)_cxxflags+=-std=c++17 -fvisibility=hidden
+$(package)_cxxflags=-std=c++17 -fvisibility=hidden -I$($($(1)_type)_prefix)/include
 
-$(package)_cppflags=-I$($($(1)_type)_prefix)/include
+#$(package)_cppflags=-I$($($(1)_type)_prefix)/include
 
-ifneq ($(build_os),arm_darwin)
-$(package)_ldlibs+=$($($(1)_type)_prefix)/lib/libboost_program_options-mt-a64.a
+$(package)_ldlibs+=-L$($($(1)_type)_prefix)/lib -lssl -lcrypto -lz -lminiupnpc -lpthread
+
+ifeq ($(build_arch),arm)
+  $(package)_ldlibs+=-lboost_program_options-mt-a64
 else
-$(package)_ldlibs+=$($($(1)_type)_prefix)/lib/libboost_program_options-mt-x64.a
+  $(package)_ldlibs+=-lboost_program_options-mt-x64
 endif
-$(package)_ldlibs+=$($($(1)_type)_prefix)/lib/libssl.a
-$(package)_ldlibs+=$($($(1)_type)_prefix)/lib/libcrypto.a
-$(package)_ldlibs+=$($($(1)_type)_prefix)/lib/libz.a
-$(package)_ldlibs+=$($($(1)_type)_prefix)/lib/libminiupnpc.a -lpthread
+
+ifeq ($(build_os),darwin)
+  SED_INP_OPT=-i ''
+else
+  SED_INP_OPT=-i
+endif
 endef
 
 define $(package)_build_cmds
-  $(MAKE) $($(package)_build_opts) CXXFLAGS="$($(package)_cxxflags)" CPPFLAGS="$($(package)_cppflags)" LDLIBS="$($(package)_ldlibs)"
+  $(MAKE) $($(package)_build_opts) CXXFLAGS="$($(package)_cxxflags)" LDLIBS="$($(package)_ldlibs)"
 endef
 
 define $(package)_stage_cmds
@@ -41,5 +44,5 @@ define $(package)_stage_cmds
   cp libi2pd/*.h* $($(package)_staging_prefix_dir)/include/libi2pd/ && \
   cp libi2pd_client/*.h $($(package)_staging_prefix_dir)/include/libi2pd/ && \
   cp i18n/*.h $($(package)_staging_prefix_dir)/include/libi2pd/ && \
-  sed -i '' "s/LogPrint/I2PLogPrint/g" $($(package)_staging_prefix_dir)/include/libi2pd/*.h
+  sed $(SED_INP_OPT) "s/LogPrint/I2PLogPrint/g" $($(package)_staging_prefix_dir)/include/libi2pd/*.h
 endef
