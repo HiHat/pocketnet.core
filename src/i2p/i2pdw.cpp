@@ -40,8 +40,10 @@ namespace i2pdw {
 			if (!i2p::fs::Exists(config)) {
 				// use i2pd.conf only if exists
 				config = ""; /* reset */
+                                LogPrint(BCLog::I2P, "i2pd config not found in %s\n", datadir);
 			}
 		}
+
 
 		i2p::config::ParseConfig(config);
 		i2p::config::Finalize();
@@ -56,35 +58,36 @@ namespace i2pdw {
 		std::string loglevel = ""; i2p::config::GetOption("loglevel",   loglevel);
 		bool logclftime;           i2p::config::GetOption("logclftime", logclftime);
 
-// 		/* setup logging */
-// 		if (logclftime)
-// 			i2p::log::Logger().SetTimeFormat ("[%d/%b/%Y:%H:%M:%S %z]");
+		/* setup logging */
+		/*
+		if (logclftime)
+			i2p::log::Logger().SetTimeFormat ("[%d/%b/%Y:%H:%M:%S %z]");
 
-// #ifdef WIN32_APP
-// 		// Win32 app with GUI supports only logging to file
-// 		logs = "file";
-// #else
-// 		if ((logs == "" || logs == "stdout"))
-// 			logs = "file";
-// #endif
+#ifdef WIN32_APP
+		// Win32 app with GUI supports only logging to file
+		logs = "file";
+#else
+		if ((logs == "" || logs == "stdout"))
+			logs = "file";
+#endif
 
-// 		i2p::log::Logger().SetLogLevel(loglevel);
-// 		if (logstream) {
-// 			LogPrint(eLogInfo, "Log: Sending messages to std::ostream");
-// 			i2p::log::Logger().SendTo (logstream);
-// 		} else if (logs == "file") {
-// 			if (logfile == "")
-// 				logfile = i2p::fs::DataDirPath("i2pd.log");
-// 			LogPrint(eLogInfo, "Log: Sending messages to ", logfile);
-// 			i2p::log::Logger().SendTo (logfile);
-// #ifndef _WIN32
-// 		} else if (logs == "syslog") {
-// 			LogPrint(eLogInfo, "Log: Sending messages to syslog");
-// 			i2p::log::Logger().SendTo("i2pd", LOG_DAEMON);
-// #endif
-// 		} else {
-// 			// use stdout -- default
-// 		}
+		i2p::log::Logger().SetLogLevel(loglevel);
+		if (logstream) {
+			LogPrint(eLogInfo, "Log: Sending messages to std::ostream");
+			i2p::log::Logger().SendTo (logstream);
+		} else if (logs == "file") {
+			if (logfile == "")
+				logfile = i2p::fs::DataDirPath("i2pd.log");
+			LogPrint(eLogInfo, "Log: Sending messages to ", logfile);
+			i2p::log::Logger().SendTo (logfile);
+#ifndef _WIN32
+		} else if (logs == "syslog") {
+			LogPrint(eLogInfo, "Log: Sending messages to syslog");
+			i2p::log::Logger().SendTo("i2pd", LOG_DAEMON);
+#endif
+		} else {
+			// use stdout -- default
+		} */
 
 		LogPrint(BCLog::I2P, "i2pd v%s (%s) starting...\n", VERSION, I2P_VERSION);
 		LogPrint(BCLog::I2P, "FS: Main config file: %s\n", config);
@@ -231,18 +234,19 @@ namespace i2pdw {
 		LogPrint(BCLog::I2P, "Daemon: Starting NetDB\n");
 		i2p::data::netdb.Start();
 
-		// bool upnp; i2p::config::GetOption("upnp.enabled", upnp);
-		// if (upnp) {
-		// 	d.UPnP = std::unique_ptr<i2p::transport::UPnP>(new i2p::transport::UPnP);
-		// 	d.UPnP->Start ();
-		// }
+		/*
+		bool upnp; i2p::config::GetOption("upnp.enabled", upnp);
+		if (upnp) {
+			d.UPnP = std::unique_ptr<i2p::transport::UPnP>(new i2p::transport::UPnP);
+			d.UPnP->Start ();
+		}
 
-		// bool nettime; i2p::config::GetOption("nettime.enabled", nettime);
-		// if (nettime)
-		// {
-		// 	d.m_NTPSync = std::unique_ptr<i2p::util::NTPTimeSync>(new i2p::util::NTPTimeSync);
-		// 	d.m_NTPSync->Start ();
-		// }
+		bool nettime; i2p::config::GetOption("nettime.enabled", nettime);
+		if (nettime)
+		{
+			d.m_NTPSync = std::unique_ptr<i2p::util::NTPTimeSync>(new i2p::util::NTPTimeSync);
+			d.m_NTPSync->Start ();
+		} */
 
 		bool ntcp2; i2p::config::GetOption("ntcp2.enabled", ntcp2);
 		bool ssu2; i2p::config::GetOption("ssu2.enabled", ssu2);
@@ -262,22 +266,23 @@ namespace i2pdw {
 			return false;
 		}
 
-		// bool http; i2p::config::GetOption("http.enabled", http);
-		// if (http) {
-		// 	std::string httpAddr; i2p::config::GetOption("http.address", httpAddr);
-		// 	uint16_t    httpPort; i2p::config::GetOption("http.port", httpPort);
-		// 	LogPrint(BCLog::I2P, "Daemon: Starting Webconsole at ", httpAddr, ":", httpPort);
-		// 	try
-		// 	{
-		// 		d.httpServer = std::unique_ptr<i2p::http::HTTPServer>(new i2p::http::HTTPServer(httpAddr, httpPort));
-		// 		d.httpServer->Start();
-		// 	}
-		// 	catch (std::exception& ex)
-		// 	{
-		// 		LogPrintf (eLogCritical, "Daemon: Failed to start Webconsole: ", ex.what ());
-		// 		ThrowFatal ("Unable to start webconsole at ", httpAddr, ":", httpPort, ": ", ex.what ());
-		// 	}
-		// }
+		/*
+		bool http; i2p::config::GetOption("http.enabled", http);
+		if (http) {
+			std::string httpAddr; i2p::config::GetOption("http.address", httpAddr);
+			uint16_t    httpPort; i2p::config::GetOption("http.port", httpPort);
+			LogPrint(BCLog::I2P, "Daemon: Starting Webconsole at ", httpAddr, ":", httpPort);
+			try
+			{
+				d.httpServer = std::unique_ptr<i2p::http::HTTPServer>(new i2p::http::HTTPServer(httpAddr, httpPort));
+				d.httpServer->Start();
+			}
+			catch (std::exception& ex)
+			{
+				LogPrintf (eLogCritical, "Daemon: Failed to start Webconsole: ", ex.what ());
+				ThrowFatal ("Unable to start webconsole at ", httpAddr, ":", httpPort, ": ", ex.what ());
+			}
+		} */
 
 		LogPrint(BCLog::I2P, "Daemon: Starting Tunnels\n");
 		i2p::tunnel::tunnels.Start();
@@ -288,23 +293,24 @@ namespace i2pdw {
 		LogPrint(BCLog::I2P, "Daemon: Starting Client\n");
 		i2p::client::context.Start();
 
-		// // I2P Control Protocol
-		// bool i2pcontrol; i2p::config::GetOption("i2pcontrol.enabled", i2pcontrol);
-		// if (i2pcontrol) {
-		// 	std::string i2pcpAddr; i2p::config::GetOption("i2pcontrol.address", i2pcpAddr);
-		// 	uint16_t    i2pcpPort; i2p::config::GetOption("i2pcontrol.port",    i2pcpPort);
-		// 	LogPrint(BCLog::I2P, "Daemon: Starting I2PControl at ", i2pcpAddr, ":", i2pcpPort);
-		// 	try
-		// 	{
-		// 		d.m_I2PControlService = std::unique_ptr<i2p::client::I2PControlService>(new i2p::client::I2PControlService (i2pcpAddr, i2pcpPort));
-		// 		d.m_I2PControlService->Start ();
-		// 	}
-		// 	catch (std::exception& ex)
-		// 	{
-		// 		LogPrintf(eLogCritical, "Daemon: Failed to start I2PControl: ", ex.what ());
-		// 		ThrowFatal ("Unable to start I2PControl service at ", i2pcpAddr, ":", i2pcpPort, ": ", ex.what ());
-		// 	}
-		// }
+		// I2P Control Protocol
+		/*
+		bool i2pcontrol; i2p::config::GetOption("i2pcontrol.enabled", i2pcontrol);
+		if (i2pcontrol) {
+			std::string i2pcpAddr; i2p::config::GetOption("i2pcontrol.address", i2pcpAddr);
+			uint16_t    i2pcpPort; i2p::config::GetOption("i2pcontrol.port",    i2pcpPort);
+			LogPrint(BCLog::I2P, "Daemon: Starting I2PControl at ", i2pcpAddr, ":", i2pcpPort);
+			try
+			{
+				d.m_I2PControlService = std::unique_ptr<i2p::client::I2PControlService>(new i2p::client::I2PControlService (i2pcpAddr, i2pcpPort));
+				d.m_I2PControlService->Start ();
+			}
+			catch (std::exception& ex)
+			{
+				LogPrintf(eLogCritical, "Daemon: Failed to start I2PControl: ", ex.what ());
+				ThrowFatal ("Unable to start I2PControl service at ", i2pcpAddr, ":", i2pcpPort, ": ", ex.what ());
+			}
+		} */
 
 		return true;
 	}
@@ -325,33 +331,35 @@ namespace i2pdw {
 		LogPrint(BCLog::I2P, "Daemon: Stopping Tunnels\n");
 		i2p::tunnel::tunnels.Stop();
 
-		// if (d.UPnP)
-		// {
-		// 	d.UPnP->Stop ();
-		// 	d.UPnP = nullptr;
-		// }
+		/*
+		if (d.UPnP)
+		{
+			d.UPnP->Stop ();
+			d.UPnP = nullptr;
+		}
 
-		// if (d.m_NTPSync)
-		// {
-		// 	d.m_NTPSync->Stop ();
-		// 	d.m_NTPSync = nullptr;
-		// }
+		if (d.m_NTPSync)
+		{
+			d.m_NTPSync->Stop ();
+			d.m_NTPSync = nullptr;
+		} */
 
 		LogPrint(BCLog::I2P, "Daemon: Stopping Transports\n");
 		i2p::transport::transports.Stop();
 		LogPrint(BCLog::I2P, "Daemon: Stopping NetDB\n");
 		i2p::data::netdb.Stop();
-		// if (d.httpServer) {
-		// 	LogPrint(BCLog::I2P, "Daemon: Stopping HTTP Server");
-		// 	d.httpServer->Stop();
-		// 	d.httpServer = nullptr;
-		// }
-		// if (d.m_I2PControlService)
-		// {
-		// 	LogPrint(BCLog::I2P, "Daemon: Stopping I2PControl");
-		// 	d.m_I2PControlService->Stop ();
-		// 	d.m_I2PControlService = nullptr;
-		// }
+		/*
+		if (d.httpServer) {
+			LogPrint(BCLog::I2P, "Daemon: Stopping HTTP Server");
+			d.httpServer->Stop();
+			d.httpServer = nullptr;
+		}
+		if (d.m_I2PControlService)
+		{
+			LogPrint(BCLog::I2P, "Daemon: Stopping I2PControl");
+			d.m_I2PControlService->Stop ();
+			d.m_I2PControlService = nullptr;
+		} */
 		i2p::crypto::TerminateCrypto ();
 		i2p::log::Logger().Stop();
 
