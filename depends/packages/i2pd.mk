@@ -17,10 +17,13 @@ $(package)_cxxflags_darwin=-std=c++17 -fvisibility=hidden
 
 #$(package)_cppflags=-I$($($(1)_type)_prefix)/include
 
-$(package)_ldlibs+=-L$($($(1)_type)_prefix)/lib -lssl -lcrypto -lz -lminiupnpc -lpthread
+$(package)_ldlibs=-L$($($(1)_type)_prefix)/lib -lssl -lcrypto -lz -lminiupnpc -lpthread
 
-ifeq ($(build_arch),arm)
+ifeq ($(host_arch),arm)
   $(package)_ldlibs+=-lboost_program_options-mt-a64
+else ifeq ($(host_os),mingw32)
+  $(package)_build_env=AR="$($(package)_ar)" RANLIB="$($(package)_ranlib)" CXX="$($(package)_cxx)" WINDRES="$($(package)_windres)"
+  $(package)_ldlibs+=-lboost_program_options-mt-s-x64 -lboost_filesystem-mt-s-x64
 else
   $(package)_ldlibs+=-lboost_program_options-mt-x64
 endif
@@ -32,8 +35,12 @@ else
 endif
 endef
 
+define $(package)_preprocess_cmds
+  sed $(SED_INP_OPT) "s|NEEDED_CXXFLAGS += -std=c++20|NEEDED_CXXFLAGS += -std=c++2a|" Makefile.mingw
+endef
+
 define $(package)_build_cmds
-  $(MAKE) $($(package)_build_opts) CXXFLAGS="$($(package)_cxxflags)" LDLIBS="$($(package)_ldlibs)"
+  $(MAKE) $($(package)_build_opts) CXXFLAGS="$($(package)_cxxflags)" LDLIBS="$($(package)_ldlibs)" libi2pd.a libi2pdclient.a libi2pdlang.a
 endef
 
 define $(package)_stage_cmds
