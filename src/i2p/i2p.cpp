@@ -9,6 +9,7 @@
 #include <crypto/sha256.h>
 #include <i2p/i2p.h>
 #include <logging.h>
+#include <net.h>
 #include <netaddress.h>
 #include <netbase.h>
 #include <random.h>
@@ -198,15 +199,10 @@ bool Session::Accept(Connection& conn)
             break;
         }
 
-        conn.peer = CService(peer_addr, I2P_SAM31_PORT);
+//        conn.peer = CService(peer_addr, I2P_SAM31_PORT);
+        conn.peer = CService(peer_addr, 36060);         // FIXME!!!
 
-        try {
-            std::string sock_data = conn.sock->RecvUntilTerminator('\n', MAX_WAIT_FOR_IO, *m_interrupt, MAX_MSG_SIZE);
-            Log("sock_data: %s\n", sock_data);
-            continue;
-        } catch (const std::runtime_error& e) {
-            break;
-        }
+        LogPrintLevel(BCLog::I2P, BCLog::Level::Info, "Accept: peer_addr=%s\n", peer_addr.ToString());
 
         return true;
     }
@@ -252,8 +248,9 @@ bool Session::Connect(const CService& to, Connection& conn, bool& proxy_error)
         const std::string& dest = lookup_reply.Get("VALUE");
 
         const Reply& connect_reply = SendRequestAndGetReply(
-            *sock, strprintf("STREAM CONNECT ID=%s DESTINATION=%s SILENT=false TO_PORT=%d", session_id, dest, conn.peer.GetPort()),
+            *sock, strprintf("STREAM CONNECT ID=%s DESTINATION=%s TO_PORT=%d SILENT=false", session_id, dest, conn.peer.GetPort()),
             false);
+        LogPrintLevel(BCLog::I2P, BCLog::Level::Info, "SentRequest: STREAM CONNECT ID=%s DESTINATION=%s TO_PORT=%d SILENT=false\n", session_id, dest, conn.peer.GetPort());
 
         const std::string& result = connect_reply.Get("RESULT");
 
@@ -346,7 +343,7 @@ std::unique_ptr<Sock> Session::Hello() const
         throw std::runtime_error(strprintf("Cannot connect to %s", m_control_host.ToStringAddrPort()));
     }
 
-    SendRequestAndGetReply(*sock, "HELLO VERSION MIN=3.2 MAX=3.2");
+    SendRequestAndGetReply(*sock, "HELLO VERSION MIN=3.1 MAX=3.2");
 
     return sock;
 }
@@ -460,7 +457,8 @@ void Session::CreateIfNotCreatedAlready()
                                          private_key_b64));
     }
 
-    m_my_addr = CService(DestBinToAddr(MyDestination()), I2P_SAM31_PORT);
+//    m_my_addr = CService(DestBinToAddr(MyDestination()), I2P_SAM31_PORT);
+    m_my_addr = CService(DestBinToAddr(MyDestination()), GetListenPort());
     m_session_id = session_id;
     m_control_sock = std::move(sock);
 

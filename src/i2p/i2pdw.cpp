@@ -86,7 +86,7 @@ namespace i2pdw {
 			i2p::log::Logger().SendTo("i2pd", LOG_DAEMON);
 #endif
 		} else {
-			// use stdout -- default
+			use stdout -- default
 		} */
 
 		LogPrint(BCLog::I2P, "i2pd v%s (%s) starting...\n", VERSION, I2P_VERSION);
