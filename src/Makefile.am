@@ -202,6 +202,7 @@ POCKETDB_H = \
     pocketdb/consensus/moderation/Vote.hpp \
     \
     pocketdb/consensus/barteron/Offer.hpp \
+    pocketdb/consensus/barteron/OfferPaid.hpp \
     pocketdb/consensus/barteron/Account.hpp \
     \
     pocketdb/models/base/PocketTypes.h \
@@ -247,6 +248,7 @@ POCKETDB_H = \
     pocketdb/models/dto/moderation/Vote.h \
     pocketdb/models/dto/barteron/Account.h \
     pocketdb/models/dto/barteron/Offer.h \
+    pocketdb/models/dto/barteron/OfferPaid.h \
     \
     pocketdb/models/web/WebTag.h \
     pocketdb/models/web/WebContent.h \
@@ -359,6 +361,7 @@ POCKETDB_CPP = \
     pocketdb/models/dto/moderation/Vote.cpp \
     pocketdb/models/dto/barteron/Account.cpp \
     pocketdb/models/dto/barteron/Offer.cpp \
+    pocketdb/models/dto/barteron/OfferPaid.cpp \
     \
     pocketdb/models/shortform/ShortForm.cpp \
     pocketdb/models/shortform/ShortAccount.cpp \
@@ -412,6 +415,7 @@ POCKETCOIN_CORE_H = \
     index/txindex.h \
     indirectmap.h \
     init.h \
+    init/common.h \
     interfaces/chain.h \
     interfaces/handler.h \
     interfaces/node.h \
@@ -434,6 +438,7 @@ POCKETCOIN_CORE_H = \
     node/coinstats.h \
     node/connection_types.h \
     node/context.h \
+    node/eviction.h \
     node/psbt.h \
     node/transaction.h \
     node/ui_interface.h \
@@ -593,6 +598,7 @@ libpocketcoin_server_a_SOURCES = \
     node/coinstats.cpp \
     node/connection_types.cpp \
     node/context.cpp \
+    node/eviction.cpp \
     node/psbt.cpp \
     node/transaction.cpp \
     node/ui_interface.cpp \
@@ -787,6 +793,7 @@ libpocketcoin_common_a_SOURCES = \
   compressor.cpp \
   core_read.cpp \
   core_write.cpp \
+  init/common.cpp \
   key.cpp \
   key_io.cpp \
   merkleblock.cpp \

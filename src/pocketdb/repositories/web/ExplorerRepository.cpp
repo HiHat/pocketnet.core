@@ -60,7 +60,7 @@ namespace PocketDb
                     from
                         Transactions t
                     where
-                        t.Type in (1,100,103,104,200,201,202,204,205,208,209,210,211,220,300,301,302,303) and
+                        t.Type in (1,100,103,104,200,201,202,204,205,208,209,210,211,212,220,300,301,302,303) and
                         t.Time >= ? and
                         t.time < ?
                     group by
@@ -104,7 +104,7 @@ namespace PocketDb
                         Chain c indexed by Chain_HeightByHour
                         cross join Transactions t on
                             t.RowId = c.TxId and
-                            t.Type in (1,100,103,104,200,201,202,204,205,208,209,210,211,220,300,301,302,303)
+                            t.Type in (1,100,103,104,200,201,202,204,205,208,209,210,211,212,220,300,301,302,303)
                     where
                     (c.Height / 60) < (? / 60) and
                     (c.Height / 60) >= (? / 60)
@@ -149,7 +149,7 @@ namespace PocketDb
                         Chain c indexed by Chain_HeightByDay
                         join Transactions t on
                             t.RowId = c.TxId and
-                            t.Type in (1,100,103,104,200,201,202,204,205,208,209,210,211,220,300,301,302,303)
+                            t.Type in (1,100,103,104,200,201,202,204,205,208,209,210,211,212,220,300,301,302,303)
                     where
                     (c.Height / 1440) < (? / 1440) and
                     (c.Height / 1440) >= (? / 1440)
@@ -358,7 +358,7 @@ namespace PocketDb
                     cross join Last l on
                         l.TxId = t.RowId
                     where
-                        t.Type in (1,100,103,104,200,201,202,204,205,208,209,210,211,220,300,301,302,303)
+                        t.Type in (1,100,103,104,200,201,202,204,205,208,209,210,211,212,220,300,301,302,303)
                     group by
                         t.Type
                 )sql");
@@ -648,53 +648,35 @@ namespace PocketDb
         return result;
     }
 
-    UniValue ExplorerRepository::GetFromToTransactions(const string& from, const string& to, int minHeight)
+    UniValue ExplorerRepository::GetFromToTransactions(const string& from, const string& to, int minHeight, const vector<string>& opreturns)
     {
         UniValue result(UniValue::VARR);
 
         string sql = R"sql(
-            select
-                distinct
-                (select r.String from Registry r where r.RowId = ofr.AddressId) addrFrom,
-                (select r.String from Registry r where r.RowId = ot.AddressId) addrTo,
-                (select r.String from Registry r where r.RowId = t.RowId) tx,
-                t.Type,
-                tc.Height,
-                ot.Value,
+            select distinct
+                sender.String as sender,
+                receiver.String as receiver,
+                tr.String as txid,
+                t.Type as txtype,
+                c.Height,
+                o1.Value,
                 t.Time,
-                (
-                    select
-                        (select r.String from Registry r where r.RowId = ot0.ScriptPubKeyId)
-                    from TxOutputs ot0 indexed by TxOutputs_TxId_Number_AddressId
-                    where
-                        ot0.TxId = ot.TxId and
-                        ot0.Number = 0
-                ) pubkey
+                rop.String as optype
             from
-                TxOutputs ot
-            cross join
-                TxOutputs of on
-                    of.TxId = ot.TxId
-            )sql" + (from.empty() ? ""s : " and of.AddressId = ( select RowId as value from Registry where String = ?) "s) +R"sql(
-            cross join
-                Transactions t on
-                    t.RowId = of.TxId and
-                    t.Type in (1, 204)
-            cross join
-                Chain tc indexed by Chain_TxId_Height on
-                    tc.TxId = t.RowId and
-                    tc.Height >= ?
-            cross join
-                TxInputs it indexed by TxInputs_SpentTxId_Number_TxId on
-                    it.SpentTxId = ot.TxId
-            cross join
-                TxOutputs ofr indexed by TxOutputs_TxId_Number_AddressId on
-                    ofr.TxId = it.TxId and
-                    ofr.Number = it.Number and
-                    ofr.AddressId != ( select RowId as value from Registry where String = ?)
-                    )sql" + (from.empty() ? ""s : " and ofr.AddressId = ( select RowId as value from Registry where String = ?) "s) +R"sql(
+                TxOutputs o
+            cross join TxInputs i indexed by TxInputs_SpentTxId_Number_TxId on i.SpentTxId=o.TxId
+                cross join TxOutputs io indexed by TxOutputs_TxId_Number_AddressId on io.TxId=i.TxId and io.Number=i.Number
+                    cross join Registry sender on sender.RowId=io.AddressId
+            cross join TxOutputs o1 indexed by TxOutputs_TxId_Number_AddressId on o1.TxId=o.TxId and o1.Number=1
+                cross join Registry receiver on receiver.RowId=o1.AddressId
+            cross join Transactions t on t.RowId=o.TxId
+            cross join Chain c indexed by Chain_TxId_Height on c.TxId=t.RowId and c.Height >= ?
+            cross join Registry tr on tr.RowId=o.TxId
+            cross join Registry rop on rop.RowId=o.ScriptPubKeyId
             where
-                ot.AddressId = ( select RowId as value from Registry where String = ?)
+                o.ScriptPubKeyId in (select r.RowId from Registry r where r.String in ( )sql" + join(vector<string>(opreturns.size(), "?"), ",") + R"sql( ) )
+                )sql" + (from.empty() ? ""s : " and sender.String = ? "s) + R"sql(
+                )sql" + (to.empty() ? ""s : " and receiver.String = ? "s) + R"sql(
         )sql";
 
         SqlTransaction(
@@ -702,18 +684,13 @@ namespace PocketDb
             [&]() -> Stmt& {
                 auto& stmt = Sql(sql);
 
-                if (!from.empty())
-                    stmt.Bind(from);
-
-                stmt.Bind(
-                    minHeight,
-                    to
-                );
+                stmt.Bind(minHeight, opreturns);
 
                 if (!from.empty())
                     stmt.Bind(from);
 
-                stmt.Bind(to);
+                if (!to.empty())
+                    stmt.Bind(to);
 
                 return stmt;
             },
@@ -729,9 +706,7 @@ namespace PocketDb
                         cursor.Collect<int64_t>(4, record, "height");
                         cursor.Collect<int64_t>(5, record, "amount");
                         cursor.Collect<int64_t>(6, record, "time");
-                        if (auto[ok, value] = cursor.TryGetColumnString(7); ok)
-                            record.pushKV("opreturn", TransactionHelper::ParseOpReturn(value));
-
+                        cursor.Collect<string>(7, record, "opreturn");
                         result.push_back(record);
                     }
                 });

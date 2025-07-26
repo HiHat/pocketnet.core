@@ -1,3 +1,16 @@
+# Ubuntu 20.04.6 LTS Focal Fossa, https://wiki.ubuntu.com/Releases, EOSS in May 2025:
+#  - CMake 3.16.3, https://packages.ubuntu.com/focal/cmake
+cmake_minimum_required(VERSION 3.16)
+
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
+  message(FATAL_ERROR "In-source builds are not allowed.")
+endif()
+
+if(POLICY CMP0167)
+  # See: https://cmake.org/cmake/help/latest/policy/CMP0167.html
+  cmake_policy(SET CMP0167 NEW)
+endif()
+
 include(CheckFunctionExists)
 include(CheckCXXSourceCompiles)
 include(CheckCXXSymbolExists)
@@ -653,6 +666,8 @@ add_library(${POCKETDB}
         pocketdb/models/dto/barteron/Account.cpp
         pocketdb/models/dto/barteron/Offer.h
         pocketdb/models/dto/barteron/Offer.cpp
+        pocketdb/models/dto/barteron/OfferPaid.h
+        pocketdb/models/dto/barteron/OfferPaid.cpp
 
         pocketdb/models/dto/action/ScoreContent.h
         pocketdb/models/dto/action/ScoreContent.cpp
@@ -951,6 +966,8 @@ add_library(${POCKETCOIN_SERVER}
         node/connection_types.cpp
         node/context.h
         node/context.cpp
+        node/eviction.h
+        node/eviction.cpp
         node/psbt.h
         node/psbt.cpp
         node/transaction.h
@@ -1003,6 +1020,8 @@ add_library(${POCKETCOIN_SERVER}
         i2p.cpp
         init.h
         init.cpp
+        init/common.h
+        init/common.cpp
         interfaces/handler.h
         interfaces/handler.cpp
         dbwrapper.h
@@ -1245,6 +1264,7 @@ add_library(${POCKETCOIN_SERVER}
         pocketdb/consensus/moderation/Flag.hpp
         pocketdb/consensus/moderation/Vote.hpp
         pocketdb/consensus/barteron/Offer.hpp
+        pocketdb/consensus/barteron/OfferPaid.hpp
         pocketdb/consensus/barteron/Account.hpp
         pocketdb/consensus/Helper.cpp
         )
