@@ -199,8 +199,8 @@ bool Session::Accept(Connection& conn)
             break;
         }
 
-//        conn.peer = CService(peer_addr, I2P_SAM31_PORT);
-        conn.peer = CService(peer_addr, 36060);         // FIXME!!!
+        conn.peer = CService(peer_addr, I2P_SAM31_PORT);
+//        conn.peer = CService(peer_addr, 36060);         // FIXME!!!
 
         LogPrintLevel(BCLog::I2P, BCLog::Level::Info, "Accept: peer_addr=%s\n", peer_addr.ToString());
 
