@@ -4219,19 +4219,26 @@ namespace PocketDb
                         JuryBan jb on
                             jb.AccountId = cu.Uid and
                             jb.Ending > ?
+                    -- Join Jury & JuryVerdict for exclude active juries
                     left join
-                        Jury j on
-                            j.AccountId = cu.Uid
-                    left join
-                        JuryVerdict jv on
-                            jv.FlagRowId = j.FlagRowId
+                        (
+                            select
+                                j.AccountId
+                            from
+                                Jury j
+                            left join
+                                JuryVerdict jv on
+                                    jv.FlagRowId = j.FlagRowId
+                            where
+                                jv.FlagRowId is null
+                        ) jjv on jjv.AccountId = cu.Uid
                     where
                         -- Do not show posts from users with low reputation
                         ifnull(ur.Value,0) > ?
                         -- Do not show posts from banned users
                         and jb.AccountId is null
                         -- Do not show posts from users with active jury
-                        and jv.FlagRowId is null
+                        and jjv.AccountId is null
                     order by
                         r.Value desc
                     limit ?
@@ -4603,8 +4610,9 @@ namespace PocketDb
                         t.Type,
                         t.Int1 as ContentTypes,
                         p.String2 as Caption,
-                        p.String3 as Image
-
+                        p.String3 as Image,
+                        p.String4 as Settings,
+                        c.Height
                     from
                         Chain c
                     cross join
@@ -4655,6 +4663,9 @@ namespace PocketDb
                         if (auto[ok, value] = cursor.TryGetColumnString(8); ok) record.pushKV("contentTypes", value); // caption
                         if (auto[ok, value] = cursor.TryGetColumnString(9); ok) record.pushKV("c", value); // caption
                         if (auto[ok, value] = cursor.TryGetColumnString(10); ok) record.pushKV("i", value); // image
+                        if (auto[ok, value] = cursor.TryGetColumnString(11); ok) record.pushKV("s", value); // settings
+                        if (auto[ok, value] = cursor.TryGetColumnInt64(12); ok) record.pushKV("height", value); // height
+
                         tmpResult[txId] = record;
                     }
                 });
@@ -4772,12 +4783,19 @@ namespace PocketDb
                 JuryBan jb on
                     jb.AccountId = cu.Uid and
                     jb.Ending > ?
+            -- Join Jury & JuryVerdict for exclude active juries
             left join
-                Jury j on
-                    j.AccountId = cu.Uid
-            left join
-                JuryVerdict jv on
-                    jv.FlagRowId = j.FlagRowId
+                (
+                    select
+                        j.AccountId
+                    from
+                        Jury j
+                    left join
+                        JuryVerdict jv on
+                            jv.FlagRowId = j.FlagRowId
+                    where
+                        jv.FlagRowId is null
+                ) jjv on jjv.AccountId = cu.Uid
             where
 
                     ct.Height > ?
@@ -4790,7 +4808,7 @@ namespace PocketDb
                 and jb.AccountId is null
 
                 -- Do not show posts from users with active jury
-                and jv.FlagRowId is null
+                and jjv.AccountId is null
 
                 -- Skip ids for pagination
                 )sql" + skipPaginationSql + R"sql(
@@ -5014,12 +5032,19 @@ namespace PocketDb
                 JuryBan jb on
                     jb.AccountId = cu.Uid and
                     jb.Ending > ?
+            -- Join Jury & JuryVerdict for exclude active juries
             left join
-                Jury j on
-                    j.AccountId = cu.Uid
-            left join
-                JuryVerdict jv on
-                    jv.FlagRowId = j.FlagRowId
+                (
+                    select
+                        j.AccountId
+                    from
+                        Jury j
+                    left join
+                        JuryVerdict jv on
+                            jv.FlagRowId = j.FlagRowId
+                    where
+                        jv.FlagRowId is null
+                ) jjv on jjv.AccountId = cu.Uid
             where
 
                     ct.Height > ?
@@ -5032,7 +5057,7 @@ namespace PocketDb
                 and jb.AccountId is null
 
                 -- Do not show posts from users with active jury
-                and jv.FlagRowId is null
+                and jjv.AccountId is null
 
                 -- Skip ids for pagination
                 )sql" + skipPaginationSql + R"sql(
@@ -5423,12 +5448,18 @@ namespace PocketDb
                     p.TxId = t.RowId and
                     ( ? or p.String1 = ? )
             cross join
-                Last lt on
-                    lt.TxId = t.RowId
+                First ft on
+                    ft.TxId = t.RowId
             cross join
                 Chain ct indexed by Chain_TxId_Height on
                     ct.TxId = t.RowId and
                     ct.Height <= ?
+            cross join
+                Chain ctt indexed by Chain_Uid_Height on
+                    ctt.Uid = ct.Uid
+            cross join
+                Last ltt on
+                    ltt.TxId = ctt.TxId
             cross join
                 Transactions u indexed by Transactions_Type_RegId1_RegId2_RegId3 on
                     u.Type in (100) and u.RegId1 = t.RegId1
@@ -5442,12 +5473,19 @@ namespace PocketDb
                 JuryBan jb on
                     jb.AccountId = cu.Uid and
                     jb.Ending > ?
+            -- Join Jury & JuryVerdict for exclude active juries
             left join
-                Jury j on
-                    j.AccountId = cu.Uid
-            left join
-                JuryVerdict jv on
-                    jv.FlagRowId = j.FlagRowId
+                (
+                    select
+                        j.AccountId
+                    from
+                        Jury j
+                    left join
+                        JuryVerdict jv on
+                            jv.FlagRowId = j.FlagRowId
+                    where
+                        jv.FlagRowId is null
+                ) jjv on jjv.AccountId = cu.Uid
             where
                 t.Type in ( )sql" + join(vector<string>(contentTypes.size(), "?"), ",") + R"sql( )
 
@@ -5455,7 +5493,7 @@ namespace PocketDb
                 and jb.AccountId is null
 
                 -- Do not show posts from users with active jury
-                and jv.FlagRowId is null
+                and jjv.AccountId is null
 
                 -- Skip ids for pagination
                 )sql" + skipPaginationSql + R"sql(
@@ -5680,12 +5718,19 @@ namespace PocketDb
                 JuryBan jb on
                     jb.AccountId = cu.Uid and
                     jb.Ending > ?
+            -- Join Jury & JuryVerdict for exclude active juries
             left join
-                Jury j on
-                    j.AccountId = cu.Uid
-            left join
-                JuryVerdict jv on
-                    jv.FlagRowId = j.FlagRowId
+                (
+                    select
+                        j.AccountId
+                    from
+                        Jury j
+                    left join
+                        JuryVerdict jv on
+                            jv.FlagRowId = j.FlagRowId
+                    where
+                        jv.FlagRowId is null
+                ) jjv on jjv.AccountId = cu.Uid
             where
                 t.Type in ( )sql" + join(vector<string>(contentTypes.size(), "?"), ",") + R"sql( )
                 and t.RegId3 is null
@@ -5697,7 +5742,7 @@ namespace PocketDb
                 and jb.AccountId is null
 
                 -- Do not show posts from users with active jury
-                and jv.FlagRowId is null
+                and jjv.AccountId is null
 
                 -- Skip ids for pagination
                 )sql" + skipPaginationSql + R"sql(
@@ -5909,12 +5954,19 @@ namespace PocketDb
                 JuryBan jb on
                     jb.AccountId = cu.Uid and
                     jb.Ending > ?
+            -- Join Jury & JuryVerdict for exclude active juries
             left join
-                Jury j on
-                    j.AccountId = cu.Uid
-            left join
-                JuryVerdict jv on
-                    jv.FlagRowId = j.FlagRowId
+                (
+                    select
+                        j.AccountId
+                    from
+                        Jury j
+                    left join
+                        JuryVerdict jv on
+                            jv.FlagRowId = j.FlagRowId
+                    where
+                        jv.FlagRowId is null
+                ) jjv on jjv.AccountId = cu.Uid
             where
                 ct.Height > ?
                 and ct.Height <= ?
@@ -5926,7 +5978,7 @@ namespace PocketDb
                 and jb.AccountId is null
 
                 -- Do not show posts from users with active jury
-                and jv.FlagRowId is null
+                and jjv.AccountId is null
 
                 -- Exclude posts
                 and t.RegId2 not in (
@@ -6210,23 +6262,32 @@ namespace PocketDb
                         JuryBan jb on
                             jb.AccountId = cu.Uid and
                             jb.Ending > heightMax.value
+                    -- Join Jury & JuryVerdict for exclude active juries
                     left join
-                        Jury j on
-                            j.AccountId = cu.Uid
-                    left join
-                        JuryVerdict jv on
-                            jv.FlagRowId = j.FlagRowId
+                        (
+                            select
+                                j.AccountId
+                            from
+                                Jury j
+                            left join
+                                JuryVerdict jv on
+                                    jv.FlagRowId = j.FlagRowId
+                            where
+                                jv.FlagRowId is null
+                        ) jjv on jjv.AccountId = cu.Uid
                     where
                         tb.Type in ( 208 )
 
                         -- Do not show posts from users with low reputation
                         and ifnull(ur.Value, 0) > minReputation.value
 
+                        -- Skip posts with moderation conditions
+
                         -- Do not show posts from banned users
                         and jb.AccountId is null
 
                         -- Do not show posts from users with active jury
-                        and jv.FlagRowId is null
+                        and jjv.AccountId is null
 
                         -- Other excludes
                         and tc.RegId2 not in (
@@ -6328,9 +6389,8 @@ namespace PocketDb
         return result;
     }
 
-    // TODO (aok, api): implement
     UniValue WebRpcRepository::GetProfileCollections(const string& addressFeed, int countOut, int pageNumber, const int64_t& topContentId, int topHeight,
-                                   const string& lang, const vector<string>& tags, const vector<int>& contentTypes,
+                                   const string& lang, const vector<string>& tagsIncluded, const vector<int>& contentTypes,
                                    const vector<string>& txidsExcluded, const vector<string>& addrsExcluded, const vector<string>& tagsExcluded,
                                    const string& address, const string& keyword, const string& orderby, const string& ascdesc)
     {
@@ -6339,67 +6399,92 @@ namespace PocketDb
         if (addressFeed.empty())
             return result;
 
-        // ---------------------------------------------
-        string _keyword;
-        if(!keyword.empty())
-        {
-            _keyword = "\"" + keyword + "\"" + " OR \"" + keyword + "\"*";
-        }
+        string _keyword = FormatSearchKeyword(keyword);
 
-        string contentTypesWhere = " ( 220 ) ";
-
-        string contentIdWhere;
-        if (topContentId > 0)
-            contentIdWhere = " and t.Id < ? ";
-
-        string accountExistence = " join Transactions ua indexed by Transactions_Type_Last_String1_Height_Id "
-                                  " on ua.String1 = t.String1 and ua.Type = 100 and ua.Last = 1 and ua.Height is not null ";
-
-        string langFilter;
-        if (!lang.empty())
-            langFilter += " join Payload p indexed by Payload_String1_TxHash on p.TxHash = t.Hash and p.String1 = ? ";
-
-        string sorting = "t.Id ";
+        string sorting = " ct.Height ";
         sorting += " " + ascdesc;
-
-        string sql = R"sql(
-            select t.Id
-            from Transactions t indexed by Transactions_Type_Last_String1_Height_Id
-            )sql" + accountExistence + R"sql(
-            )sql" + langFilter + R"sql(
-            where t.Type in )sql" + contentTypesWhere + R"sql(
-                and t.Height > 0
-                and t.Height <= ?
-                and t.Last = 1
-                and t.String1 = ?
-                )sql" + contentIdWhere   + R"sql(
-        )sql";
-
-        sql += R"sql( order by
-        )sql" + sorting   + R"sql(
-         limit ?
-         offset ?
-        )sql";
-
-        // ---------------------------------------------
 
         vector<int64_t> ids;
         SqlTransaction(
             __func__,
             [&]() -> Stmt& {
-                auto& stmt = Sql(sql);
-                
-                if (!lang.empty()) stmt.Bind(lang);
-                stmt.Bind(topHeight, addressFeed);
-                if (topContentId > 0)
-                    stmt.Bind(topContentId);
-                stmt.Bind(countOut, pageNumber * countOut);
-
-                return stmt;
+                return Sql(R"sql(
+                    with
+                        height as ( select ? as value ),
+                        addr as ( select RowId as id, String as hash from Registry where String = ?),
+                        lang as ( select ? as value ),
+                        topContentId as ( select ? as value )
+                    select
+                        distinct ct.Uid
+                    from
+                        height,
+                        addr,
+                        lang,
+                        topContentId
+                    cross join
+                        Transactions t indexed by Transactions_Type_RegId1_RegId2_RegId3 on
+                            t.Type in ( )sql" + join(vector<string>(contentTypes.size(), "?"), ",") + R"sql( ) and
+                            t.RegId1 = addr.id
+                    cross join
+                        Last lt on
+                            lt.TxId = t.RowId
+                    cross join
+                        Chain ct on
+                            ct.TxId = t.RowId and
+                            ct.Height <= height.value and
+                            ( ? or ct.Uid < topContentId.value )
+                    cross join
+                        Payload p on
+                            p.TxId = t.RowId and
+                            ( ? or p.String1 = lang.value )
+                    left join
+                        web.TagsMap tm on
+                            tm.ContentId = ct.Uid
+                    left join
+                        web.Tags tg on
+                            tg.Id = tm.TagId
+                    where
+                        ( ? or tg.Lang = lang.value ) and
+                        ( ? or tg.Value in ( )sql" + join(vector<string>(tagsIncluded.size(), "?"), ",") + R"sql( ) ) and
+                        ( ? or tg.Value not in ( )sql" + join(vector<string>(tagsExcluded.size(), "?"), ",") + R"sql( ) ) and
+                        (
+                            ? or
+                            t.RegId2 not in (
+                                select
+                                    r.RowId
+                                from
+                                    Registry r
+                                where
+                                    r.String in ( )sql" + join(vector<string>(txidsExcluded.size(), "?"), ",") + R"sql( )
+                            )
+                        )
+                    order by )sql" + sorting + R"sql(
+                    limit ?
+                    offset ?
+                )sql")
+                .Bind(
+                    topHeight,
+                    addressFeed,
+                    lang,
+                    topContentId,
+                    contentTypes,
+                    topContentId <= 0,
+                    lang.empty(),
+                    lang.empty(),
+                    tagsIncluded.empty(),
+                    tagsIncluded,
+                    tagsExcluded.empty(),
+                    tagsExcluded,
+                    txidsExcluded.empty(),
+                    txidsExcluded,
+                    countOut,
+                    pageNumber * countOut
+                );
             },
             [&] (Stmt& stmt) {
                 stmt.Select([&](Cursor& cursor) {
-                    while (cursor.Step()) {
+                    while (cursor.Step())
+                    {
                         if (auto[ok, value] = cursor.TryGetColumnInt64(0); ok)
                             ids.push_back(value);
                     }
