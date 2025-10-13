@@ -11,21 +11,27 @@
 #include <config/pocketcoin-config.h>
 #endif
 
-#include <amount.h>
+#include <arith_uint256.h>
+#include <chain.h>
+#include <consensus/amount.h>
 #include <coins.h>
 #include <crypto/common.h> // for ReadLE64
 #include <consensus/consensus.h>
-#include <fs.h>
+#include <util/fs.h>
 #include <optional.h>
 #include <policy/feerate.h>
 #include <protocol.h> // For CMessageHeader::MessageStartChars
 #include <script/script_error.h>
+#include <serialize.h>
 #include <sync.h>
 #include <txmempool.h> // For CTxMemPool::cs
 #include <txdb.h>
 #include <versionbits.h>
 #include <serialize.h>
 #include <protectedmap.h>
+#include <uint256.h>
+#include <util/check.h>
+#include <util/translation.h>
 
 #include <atomic>
 #include <map>
@@ -49,7 +55,6 @@ extern std::shared_ptr<ProtectedMap<std::string, WSUser>> WSConnections;
 
 class CChainState;
 class BlockValidationState;
-class CBlockIndex;
 class CBlockTreeDB;
 class CBlockUndo;
 class CChainParams;
@@ -518,7 +523,8 @@ public:
     //! state to disk, which should not be done until the health of the database is verified.
     //!
     //! All arguments forwarded onto CCoinsViewDB.
-    CoinsViews(std::string ldb_name, size_t cache_size_bytes, bool in_memory, bool should_wipe);
+//    CoinsViews(std::string ldb_name, size_t cache_size_bytes, bool in_memory, bool should_wipe);
+    CoinsViews(DBParams db_params, CoinsViewOptions options);
 
     //! Initialize the CCoinsViewCache member.
     void InitCache() EXCLUSIVE_LOCKS_REQUIRED(::cs_main);

@@ -10,6 +10,8 @@
 #include <qt/walletcontroller.h>
 #include <qt/walletmodel.h>
 #include <qt/walletview.h>
+#include <util/fs.h>
+#include <util/fs_helpers.h>
 
 #include <cassert>
 

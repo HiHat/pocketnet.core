@@ -4,7 +4,7 @@
 // https://www.apache.org/licenses/LICENSE-2.0
 
 #include "pocketdb/services/WalController.h"
-#include <fs.h>
+#include <util/fs.h>
 
 namespace {
     size_t GetFileSize(std::string path)

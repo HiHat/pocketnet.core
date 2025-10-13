@@ -27,7 +27,7 @@ void test_one_input(const std::vector<uint8_t>& buffer)
     FuzzedDataProvider fuzzed_data_provider(buffer.data(), buffer.size());
 
     SetMockTime(ConsumeTime(fuzzed_data_provider));
-    CAddrMan addr_man;
+    AddrMan addr_man;
     if (fuzzed_data_provider.ConsumeBool()) {
         addr_man.m_asmap = ConsumeRandomLengthBitVector(fuzzed_data_provider);
         if (!SanityCheckASMap(addr_man.m_asmap)) {

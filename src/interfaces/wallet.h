@@ -5,7 +5,7 @@
 #ifndef POCKETCOIN_INTERFACES_WALLET_H
 #define POCKETCOIN_INTERFACES_WALLET_H
 
-#include <amount.h>                    // For CAmount
+#include <consensus/amount.h>                    // For CAmount
 #include <interfaces/chain.h>          // For ChainClient
 #include <pubkey.h>                    // For CKeyID and CScriptID (definitions needed in CTxDestination instantiation)
 #include <script/standard.h>           // For CTxDestination

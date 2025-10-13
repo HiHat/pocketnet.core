@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <miner.h>
 
-#include <amount.h>
+#include <consensus/amount.h>
 #include <chain.h>
 #include <chainparams.h>
 #include <coins.h>
@@ -69,11 +69,9 @@ static BlockAssembler::Options DefaultOptions()
     // Block resource limits
     // If -blockmaxweight is not given, limit to DEFAULT_BLOCK_MAX_WEIGHT
     BlockAssembler::Options options;
-    options.nBlockMaxWeight = gArgs.GetArg("-blockmaxweight", DEFAULT_BLOCK_MAX_WEIGHT);
-    CAmount n = 0;
-    if (gArgs.IsArgSet("-blockmintxfee") && ParseMoney(gArgs.GetArg("-blockmintxfee", ""), n))
-    {
-        options.blockMinFeeRate = CFeeRate(n);
+    options.nBlockMaxWeight = gArgs.GetIntArg("-blockmaxweight", DEFAULT_BLOCK_MAX_WEIGHT);
+    if (const auto blockmintxfee{gArgs.GetArg("-blockmintxfee")}) {
+        if (const auto parsed{ParseMoney(*blockmintxfee)}) options.blockMinFeeRate = CFeeRate{*parsed};
     }
     else
     {
@@ -129,7 +127,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const Optional<CS
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios
     if (chainparams.MineBlocksOnDemand())
-        pblock->nVersion = (int) gArgs.GetArg("-blockversion", pblock->nVersion);
+        pblock->nVersion = (int) gArgs.GetIntArg("-blockversion", pblock->nVersion);
 
     pblock->nTime = GetAdjustedTime();
     const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();

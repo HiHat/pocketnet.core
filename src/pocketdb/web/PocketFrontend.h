@@ -7,13 +7,16 @@
 #ifndef SRC_POCKETFRONTEND_H
 #define SRC_POCKETFRONTEND_H
 
-#include "fs.h"
-#include "sync.h"
-#include "util/system.h"
-#include "logging.h"
-#include "rpc/protocol.h"
-#include "boost/algorithm/string/split.hpp"
-#include "boost/algorithm/string/classification.hpp"
+#include <util/fs.h>
+#include <sync.h>
+#include <util/system.h>
+#include <logging.h>
+#include <rpc/protocol.h>
+
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 
 namespace PocketWeb
 {

@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2022 The Bitcoin Core developers
+// Copyright (c) 2011-2021 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,12 +9,9 @@
 #include <sync.h>
 
 #include <logging.h>
-#include <logging/timer.h>
 #include <tinyformat.h>
 #include <util/strencodings.h>
 #include <util/threadnames.h>
-
-#include <boost/thread/mutex.hpp>
 
 #include <map>
 #include <mutex>
@@ -25,11 +22,6 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-
-void LockContention(const char* pszName, const char* pszFile, int nLine)
-{
-    LOG_TIME_MICROS_WITH_CATEGORY(strprintf("%s, %s:%d", pszName, pszFile, nLine), BCLog::LOCK);
-}
 
 #ifdef DEBUG_LOCKORDER
 //
@@ -136,7 +128,7 @@ static void potential_deadlock_detected(const LockPair& mismatch, const LockStac
     throw std::logic_error(strprintf("potential deadlock detected: %s -> %s -> %s", mutex_b, mutex_a, mutex_b));
 }
 
-static void double_lock_detected(const void* mutex, LockStack& lock_stack)
+static void double_lock_detected(const void* mutex, const LockStack& lock_stack)
 {
     LogPrintf("DOUBLE LOCK DETECTED\n");
     LogPrintf("Lock order:\n");
@@ -148,7 +140,9 @@ static void double_lock_detected(const void* mutex, LockStack& lock_stack)
         LogPrintf("%s %s\n", prefix, i.second.ToString());
     }
     if (g_debug_lockorder_abort) {
-        tfm::format(std::cerr, "Assertion failed: detected double lock at %s:%i, details in debug log.\n", __FILE__, __LINE__);
+        tfm::format(std::cerr,
+                    "Assertion failed: detected double lock for %s, details in debug log.\n",
+                    lock_stack.back().second.ToString());
         abort();
     }
     throw std::logic_error("double lock detected");
@@ -216,12 +210,10 @@ void EnterCritical(const char* pszName, const char* pszFile, int nLine, MutexTyp
 {
     push_lock(cs, CLockLocation(pszName, pszFile, nLine, fTry, util::ThreadGetInternalName()));
 }
-
 template void EnterCritical(const char*, const char*, int, Mutex*, bool);
 template void EnterCritical(const char*, const char*, int, RecursiveMutex*, bool);
 template void EnterCritical(const char*, const char*, int, std::mutex*, bool);
 template void EnterCritical(const char*, const char*, int, std::recursive_mutex*, bool);
-template void EnterCritical(const char*, const char*, int, boost::mutex*, bool);
 
 void CheckLastCritical(void* cs, std::string& lockname, const char* guardname, const char* file, int line)
 {

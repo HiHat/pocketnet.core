@@ -7,7 +7,7 @@
 #define POCKETCOIN_RPC_SERVER_H
 
 #include "logging.h"
-#include <amount.h>
+#include <consensus/amount.h>
 #include <rpc/request.h>
 #include <rpc/cache.h>
 #include <rpc/util.h>

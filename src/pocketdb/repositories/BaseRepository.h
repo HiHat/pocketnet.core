@@ -101,7 +101,7 @@ namespace PocketDb
                 // We are running SQL logic with timeout only for read-only connections
                 if (m_timeouted)
                 {
-                    auto timeoutValue = chrono::seconds(gArgs.GetArg("-sqltimeout", 10));
+                    auto timeoutValue = chrono::seconds(gArgs.GetIntArg("-sqltimeout", 10));
 
                     run_with_timeout(
                         [&]()

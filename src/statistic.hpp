@@ -1,14 +1,14 @@
 #ifndef POCKETCOIN_STATISTIC_H
 #define POCKETCOIN_STATISTIC_H
 
-#include "logging.h"
-#include "rpc/blockchain.h"
-#include "univalue.h"
-#include "util/time.h"
-#include "chainparams.h"
-#include "validation.h"
-#include "util/ref.h"
-#include "clientversion.h"
+#include <logging.h>
+#include <rpc/blockchain.h>
+#include <univalue.h>
+#include <util/time.h>
+#include <chainparams.h>
+#include <validation.h>
+#include <util/ref.h>
+#include <clientversion.h>
 #include <sqlite3.h>
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
@@ -19,7 +19,7 @@
 #include <numeric>
 #include <set>
 
-#include "pocketdb/pocketnet.h"
+#include <pocketdb/pocketnet.h>
 
 namespace Statistic
 {
@@ -307,7 +307,7 @@ namespace Statistic
 
         void PeriodicStatLogger(const util::Ref& context)
         {
-            auto statLoggerSleep = gArgs.GetArg("-statdepth", 60) * 1000;
+            auto statLoggerSleep = gArgs.GetIntArg("-statdepth", 60) * 1000;
             std::string msg = "Statistic for last %lds:\n%s\n";
 
             while (!shutdown)

@@ -7,7 +7,7 @@
 #ifndef POCKETCOIN_WALLET_SALVAGE_H
 #define POCKETCOIN_WALLET_SALVAGE_H
 
-#include <fs.h>
+#include <util/fs.h>
 #include <streams.h>
 
 struct bilingual_str;

@@ -4,7 +4,7 @@
 
 #include <test/fuzz/util/net.h>
 
-#include <compat.h>
+#include <compat/compat.h>
 #include <netaddress.h>
 #include <protocol.h>
 #include <test/fuzz/FuzzedDataProvider.h>

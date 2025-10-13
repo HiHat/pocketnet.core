@@ -26,7 +26,7 @@ void test_one_input(const std::vector<uint8_t>& buffer)
     (void)ParseUInt32(random_string, &u32);
 
     int64_t i64;
-    (void)atoi64(random_string);
+    (void)LocaleIndependentAtoi<int64_t>(random_string);
     (void)ParseFixedPoint(random_string, 3, &i64);
     (void)ParseInt64(random_string, &i64);
 

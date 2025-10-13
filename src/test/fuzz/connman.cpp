@@ -31,7 +31,7 @@ void test_one_input(const std::vector<uint8_t>& buffer)
     CSubNet random_subnet;
     std::string random_string;
     while (fuzzed_data_provider.ConsumeBool()) {
-        switch (fuzzed_data_provider.ConsumeIntegralInRange<int>(0, 29)) {
+        switch (fuzzed_data_provider.ConsumeIntegralInRange<int>(0, 27)) {
         case 0:
             random_address = ConsumeAddress(fuzzed_data_provider);
             break;
@@ -130,18 +130,12 @@ void test_one_input(const std::vector<uint8_t>& buffer)
             break;
         }
         case 25:
-            connman.SetMaxOutboundTarget(fuzzed_data_provider.ConsumeIntegral<uint64_t>());
-            break;
-        case 26:
-            connman.SetMaxOutboundTimeframe(fuzzed_data_provider.ConsumeIntegral<uint64_t>());
-            break;
-        case 27:
             connman.SetNetworkActive(fuzzed_data_provider.ConsumeBool());
             break;
-        case 28:
+        case 26:
             connman.SetServices(random_service, static_cast<ServiceFlags>(fuzzed_data_provider.ConsumeIntegral<uint64_t>()));
             break;
-        case 29:
+        case 27:
             connman.SetTryNewOutboundPeer(fuzzed_data_provider.ConsumeBool());
             break;
         }

@@ -8,9 +8,9 @@
 #define POCKETCOIN_WALLET_BDB_H
 
 #include <clientversion.h>
-#include <fs.h>
 #include <serialize.h>
 #include <streams.h>
+#include <util/fs.h>
 #include <util/system.h>
 #include <wallet/db.h>
 
@@ -64,7 +64,7 @@ public:
 
     bool IsMock() const { return fMockDb; }
     bool IsInitialized() const { return fDbEnvInit; }
-    fs::path Directory() const { return strPath; }
+    fs::path Directory() const { return fs::PathFromString(strPath); }
 
     bool Open(bilingual_str& error);
     void Close();
@@ -101,7 +101,7 @@ public:
     BerkeleyDatabase() = delete;
 
     /** Create DB handle to real database */
-    BerkeleyDatabase(std::shared_ptr<BerkeleyEnvironment> env, std::string filename) :
+    BerkeleyDatabase(std::shared_ptr<BerkeleyEnvironment> env, fs::path filename) :
         WalletDatabase(), env(std::move(env)), strFile(std::move(filename))
     {
         auto inserted = this->env->m_databases.emplace(strFile, std::ref(*this));
@@ -145,7 +145,7 @@ public:
     bool Verify(bilingual_str& error);
 
     /** Return path to main database filename */
-    std::string Filename() override { return (env->Directory() / strFile).string(); }
+    std::string Filename() override { return fs::PathToString(env->Directory() / strFile); }
 
     std::string Format() override { return "bdb"; }
     /**
@@ -162,7 +162,7 @@ public:
     /** Database pointer. This is initialized lazily and reset during flushes, so it can be null. */
     std::unique_ptr<Db> m_db;
 
-    std::string strFile;
+    fs::path strFile;
 
     /** Make a BerkeleyBatch connected to this database */
     std::unique_ptr<DatabaseBatch> MakeBatch(bool flush_on_close = true) override;

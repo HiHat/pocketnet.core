@@ -1,11 +1,12 @@
-// Copyright (c) 2018 The Bitcoin Core developers
+// Copyright (c) 2018-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef POCKETCOIN_UTIL_BYTEVECTORHASH_H
-#define POCKETCOIN_UTIL_BYTEVECTORHASH_H
+#ifndef BITCOIN_UTIL_BYTEVECTORHASH_H
+#define BITCOIN_UTIL_BYTEVECTORHASH_H
 
-#include <stdint.h>
+#include <cstdint>
+#include <cstddef>
 #include <vector>
 
 /**
@@ -23,4 +24,4 @@ public:
     size_t operator()(const std::vector<unsigned char>& input) const;
 };
 
-#endif // POCKETCOIN_UTIL_BYTEVECTORHASH_H
+#endif // BITCOIN_UTIL_BYTEVECTORHASH_H

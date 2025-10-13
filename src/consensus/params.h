@@ -7,7 +7,11 @@
 #define POCKETCOIN_CONSENSUS_PARAMS_H
 
 #include <uint256.h>
+
+#include <chrono>
 #include <limits>
+#include <map>
+#include <vector>
 
 namespace Consensus {
 

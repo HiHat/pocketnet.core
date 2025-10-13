@@ -3,16 +3,18 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <stdint.h>
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdexcept>
-#include <vector>
-#include <limits>
-#include <string>
+#include <univalue.h>
 
-#include "univalue.h"
+#include <cerrno>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <limits>
+#include <locale>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 namespace
 {
@@ -99,26 +101,6 @@ const std::string& UniValue::get_str() const
     if (typ != VSTR)
         throw std::runtime_error("JSON value is not a string as expected");
     return getValStr();
-}
-
-int UniValue::get_int() const
-{
-    if (typ != VNUM)
-        throw std::runtime_error("JSON value is not an integer as expected");
-    int32_t retval;
-    if (!ParseInt32(getValStr(), &retval))
-        throw std::runtime_error("JSON integer out of range");
-    return retval;
-}
-
-int64_t UniValue::get_int64() const
-{
-    if (typ != VNUM)
-        throw std::runtime_error("JSON value is not an integer as expected");
-    int64_t retval;
-    if (!ParseInt64(getValStr(), &retval))
-        throw std::runtime_error("JSON integer out of range");
-    return retval;
 }
 
 double UniValue::get_real() const

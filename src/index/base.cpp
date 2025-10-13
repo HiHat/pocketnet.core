@@ -4,15 +4,18 @@
 
 #include <chainparams.h>
 #include <index/base.h>
+#include <node/database_args.h>
 #include <node/ui_interface.h>
 #include <shutdown.h>
 #include <tinyformat.h>
 #include <util/system.h>
 #include <util/translation.h>
+#include <util/thread.h>
 #include <validation.h>
 #include <warnings.h>
 
-constexpr char DB_BEST_BLOCK = 'B';
+//constexpr char DB_BEST_BLOCK = 'B';
+constexpr uint8_t DB_BEST_BLOCK{'B'};
 
 constexpr int64_t SYNC_LOG_INTERVAL = 30; // seconds
 constexpr int64_t SYNC_LOCATOR_WRITE_INTERVAL = 30; // seconds
@@ -23,12 +26,19 @@ static void FatalError(const char* fmt, const Args&... args)
     std::string strMessage = tfm::format(fmt, args...);
     SetMiscWarning(Untranslated(strMessage));
     LogPrintf("*** %s\n", strMessage);
-    AbortError(_("A fatal internal error occurred, see debug.log for details"));
+    InitError(_("A fatal internal error occurred, see debug.log for details"));
     StartShutdown();
 }
 
 BaseIndex::DB::DB(const fs::path& path, size_t n_cache_size, bool f_memory, bool f_wipe, bool f_obfuscate) :
-    CDBWrapper(path, n_cache_size, f_memory, f_wipe, f_obfuscate)
+//    CDBWrapper(path, n_cache_size, f_memory, f_wipe, f_obfuscate)
+    CDBWrapper{DBParams{
+        .path = path,
+        .cache_bytes = n_cache_size,
+        .memory_only = f_memory,
+        .wipe_data = f_wipe,
+        .obfuscate = f_obfuscate,
+        .options = [] { DBOptions options; node::ReadDatabaseArgs(gArgs, options); return options; }()}}
 {}
 
 bool BaseIndex::DB::ReadBestBlock(CBlockLocator& locator) const
@@ -307,8 +317,9 @@ void BaseIndex::Start()
         return;
     }
 
-    m_thread_sync = std::thread(&TraceThread<std::function<void()>>, GetName(),
-                                std::bind(&BaseIndex::ThreadSync, this));
+//    m_thread_sync = std::thread(&util::TraceThread, GetName(),
+//                                std::bind(&BaseIndex::ThreadSync, this));
+    m_thread_sync = std::thread(&util::TraceThread, GetName(), [this] { ThreadSync(); });
 }
 
 void BaseIndex::Stop()

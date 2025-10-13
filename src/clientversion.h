@@ -50,6 +50,11 @@ std::string FormatVersion(int nVersion);
 std::string FormatSubVersion(const std::string& name, int nClientVersion, const std::vector<std::string>& comments);
 int DeformatSubVersion(const std::string& subVer);
 
+std::string CopyrightHolders(const std::string& strPrefix);
+
+/** Returns licensing information (for -version) */
+std::string LicenseInfo();
+
 #endif // WINDRES_PREPROC
 
 #endif // POCKETCOIN_CLIENTVERSION_H

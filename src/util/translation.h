@@ -1,12 +1,14 @@
-// Copyright (c) 2019 The Bitcoin Core developers
+// Copyright (c) 2019-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef POCKETCOIN_UTIL_TRANSLATION_H
-#define POCKETCOIN_UTIL_TRANSLATION_H
+#ifndef BITCOIN_UTIL_TRANSLATION_H
+#define BITCOIN_UTIL_TRANSLATION_H
 
 #include <tinyformat.h>
+
 #include <functional>
+#include <string>
 
 /**
  * Bilingual messages:
@@ -28,6 +30,12 @@ struct bilingual_str {
     {
         return original.empty();
     }
+
+    void clear()
+    {
+        original.clear();
+        translated.clear();
+    }
 };
 
 inline bilingual_str operator+(bilingual_str lhs, const bilingual_str& rhs)
@@ -39,11 +47,24 @@ inline bilingual_str operator+(bilingual_str lhs, const bilingual_str& rhs)
 /** Mark a bilingual_str as untranslated */
 inline bilingual_str Untranslated(std::string original) { return {original, original}; }
 
+// Provide an overload of tinyformat::format which can take bilingual_str arguments.
 namespace tinyformat {
+inline std::string TranslateArg(const bilingual_str& arg, bool translated)
+{
+    return translated ? arg.translated : arg.original;
+}
+
+template <typename T>
+inline T const& TranslateArg(const T& arg, bool translated)
+{
+    return arg;
+}
+
 template <typename... Args>
 bilingual_str format(const bilingual_str& fmt, const Args&... args)
 {
-    return bilingual_str{format(fmt.original, args...), format(fmt.translated, args...)};
+    return bilingual_str{format(fmt.original, TranslateArg(args, false)...),
+                         format(fmt.translated, TranslateArg(args, true)...)};
 }
 } // namespace tinyformat
 
@@ -59,4 +80,4 @@ inline bilingual_str _(const char* psz)
     return bilingual_str{psz, G_TRANSLATION_FUN ? (G_TRANSLATION_FUN)(psz) : psz};
 }
 
-#endif // POCKETCOIN_UTIL_TRANSLATION_H
+#endif // BITCOIN_UTIL_TRANSLATION_H

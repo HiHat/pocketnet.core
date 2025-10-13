@@ -8,7 +8,7 @@
 #include "logging.h"
 #include "sync.h"
 #include "tinyformat.h"
-#include "fs.h"
+#include "util/fs.h"
 
 #include <sqlite3.h>
 #include <iostream>

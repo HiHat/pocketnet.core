@@ -5,7 +5,7 @@
 #ifndef POCKETCOIN_RPC_BLOCKCHAIN_H
 #define POCKETCOIN_RPC_BLOCKCHAIN_H
 
-#include <amount.h>
+#include <consensus/amount.h>
 #include <sync.h>
 #include <node/context.h>
 

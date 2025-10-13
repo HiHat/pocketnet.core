@@ -50,7 +50,7 @@ void test_one_input(const std::vector<uint8_t>& buffer)
     const bool parseint32_without_locale = ParseInt32(random_string, &parseint32_out_without_locale);
     int64_t parseint64_out_without_locale;
     const bool parseint64_without_locale = ParseInt64(random_string, &parseint64_out_without_locale);
-    const int64_t atoi64_without_locale = atoi64(random_string);
+    const int64_t atoi64_without_locale = LocaleIndependentAtoi<int64_t>(random_string);
     const int atoi_without_locale = atoi(random_string);
     const int64_t random_int64 = fuzzed_data_provider.ConsumeIntegral<int64_t>();
     const std::string tostring_without_locale = ToString(random_int64);
@@ -77,7 +77,7 @@ void test_one_input(const std::vector<uint8_t>& buffer)
     if (parseint64_without_locale) {
         assert(parseint64_out_without_locale == parseint64_out_with_locale);
     }
-    const int64_t atoi64_with_locale = atoi64(random_string);
+    const int64_t atoi64_with_locale = LocaleIndependentAtoi<int64_t>(random_string);
     assert(atoi64_without_locale == atoi64_with_locale);
     const int atoi_with_locale = atoi(random_string);
     assert(atoi_without_locale == atoi_with_locale);

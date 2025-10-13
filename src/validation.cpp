@@ -43,6 +43,8 @@
 #include <uint256.h>
 #include <undo.h>
 #include <util/check.h> // For NDEBUG compile time check
+#include <util/fs.h>
+#include <util/fs_helpers.h>
 #include <util/moneystr.h>
 #include <util/rbf.h>
 #include <util/strencodings.h>
@@ -1318,6 +1320,7 @@ bool ReadRawBlockFromDisk(std::vector<uint8_t>& block, const FlatFilePos& pos, c
 
     try {
         CMessageHeader::MessageStartChars blk_start;
+//        MessageStartChars blk_start;
         unsigned int blk_size;
 
         filein >> blk_start >> blk_size;
@@ -1370,6 +1373,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     return nSubsidy;
 }
 
+/*
 CoinsViews::CoinsViews(
     std::string ldb_name,
     size_t cache_size_bytes,
@@ -1377,6 +1381,10 @@ CoinsViews::CoinsViews(
     bool should_wipe) : m_dbview(
                             GetDataDir() / ldb_name, cache_size_bytes, in_memory, should_wipe),
                         m_catcherview(&m_dbview) {}
+*/
+CoinsViews::CoinsViews(DBParams db_params, CoinsViewOptions options)
+    : m_dbview{std::move(db_params), std::move(options)},
+      m_catcherview(&m_dbview) {}
 
 void CoinsViews::InitCache()
 {
@@ -1398,8 +1406,17 @@ void CChainState::InitCoinsDB(
         leveldb_name += "_" + m_from_snapshot_blockhash.ToString();
     }
 
-    m_coins_views = MakeUnique<CoinsViews>(
-        leveldb_name, cache_size_bytes, in_memory, should_wipe);
+//    m_coins_views = MakeUnique<CoinsViews>(
+//        leveldb_name, cache_size_bytes, in_memory, should_wipe);
+    m_coins_views = std::make_unique<CoinsViews>(
+        DBParams{
+            .path = m_chainman.m_options.datadir / leveldb_name,
+            .cache_bytes = cache_size_bytes,
+            .memory_only = in_memory,
+            .wipe_data = should_wipe,
+            .obfuscate = true,
+            .options = m_chainman.m_options.coins_db},
+        m_chainman.m_options.coins_view);
 }
 
 void CChainState::InitCoinsCache(size_t cache_size_bytes)
@@ -1788,7 +1805,7 @@ static bool AbortNode(const std::string& strMessage, bilingual_str user_message 
     if (user_message.empty()) {
         user_message = _("A fatal internal error occurred, see debug.log for details");
     }
-    AbortError(user_message);
+    InitError(user_message);
     StartShutdown();
     return false;
 }

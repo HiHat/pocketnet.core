@@ -2,11 +2,12 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <iomanip>
-#include <sstream>
-#include <stdio.h>
-#include "univalue.h"
+#include <univalue.h>
 #include "univalue_escapes.h"
+
+#include <memory>
+#include <string>
+#include <vector>
 
 static std::string json_escape(const std::string& inS)
 {

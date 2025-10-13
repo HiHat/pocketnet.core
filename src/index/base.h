@@ -6,11 +6,10 @@
 #define POCKETCOIN_INDEX_BASE_H
 
 #include <dbwrapper.h>
-#include <primitives/block.h>
-#include <primitives/transaction.h>
 #include <threadinterrupt.h>
 #include <validationinterface.h>
 
+class CBlock;
 class CBlockIndex;
 
 struct IndexSummary {

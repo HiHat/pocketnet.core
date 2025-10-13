@@ -5,18 +5,19 @@
 #ifndef POCKETCOIN_POLICY_FEES_H
 #define POCKETCOIN_POLICY_FEES_H
 
-#include <amount.h>
+#include <consensus/amount.h>
 #include <policy/feerate.h>
-#include <uint256.h>
 #include <random.h>
 #include <sync.h>
+#include <uint256.h>
+#include <util/fs.h>
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-class CAutoFile;
+class AutoFile;
 class CFeeRate;
 class CTxMemPoolEntry;
 class CTxMemPool;
@@ -204,10 +205,10 @@ public:
     CFeeRate estimateRawFee(int confTarget, double successThreshold, FeeEstimateHorizon horizon, EstimationResult *result = nullptr) const;
 
     /** Write estimation data to a file */
-    bool Write(CAutoFile& fileout) const;
+    bool Write(AutoFile& fileout) const;
 
     /** Read estimation data from a file */
-    bool Read(CAutoFile& filein);
+    bool Read(AutoFile& filein);
 
     /** Empty mempool transactions on shutdown to record failure to confirm for txs still in mempool */
     void FlushUnconfirmed();

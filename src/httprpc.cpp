@@ -12,10 +12,11 @@
 #include <node/ui_interface.h>
 #include <util/system.h>
 #include <util/strencodings.h>
+#include <util/string.h>
 #include <util/ref.h>
 #include <walletinitinterface.h>
 #include <memory>
-#include <boost/algorithm/string.hpp> // boost::trim
+#include <boost/algorithm/string.hpp>
 #include <crypto/hmac_sha256.h>
 
 /* Stored RPC timer interface (for unregistration) */
@@ -75,9 +76,14 @@ static bool RPCAuthorized(const std::string& strAuth, std::string& strAuthUserna
         return false;
     if (strAuth.substr(0, 6) != "Basic ")
         return false;
-    std::string strUserPass64 = strAuth.substr(6);
-    boost::trim(strUserPass64);
-    std::string strUserPass = DecodeBase64(strUserPass64);
+//    std::string strUserPass64 = strAuth.substr(6);
+//    boost::trim(strUserPass64);
+    std::string strUserPass64 = TrimString(strAuth.substr(6));
+//    std::string strUserPass = DecodeBase64(strUserPass64);
+    auto userpass_data = DecodeBase64(strUserPass64);
+    std::string strUserPass;
+    if (!userpass_data) return false;
+    strUserPass.assign(userpass_data->begin(), userpass_data->end());
 
     if (strUserPass.find(':') != std::string::npos)
         strAuthUsernameOut = strUserPass.substr(0, strUserPass.find(':'));
@@ -173,7 +179,8 @@ bool StartHTTPRPC(const util::Ref& context)
 
     struct event_base* eventBase = EventBase();
     assert(eventBase);
-    httpRPCTimerInterface = MakeUnique<HTTPRPCTimerInterface>(eventBase);
+//    httpRPCTimerInterface = MakeUnique<HTTPRPCTimerInterface>(eventBase);
+    httpRPCTimerInterface = std::make_unique<HTTPRPCTimerInterface>(eventBase);
     RPCSetTimerInterface(httpRPCTimerInterface.get());
     return true;
 }

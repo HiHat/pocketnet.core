@@ -6,7 +6,7 @@
 #ifndef POCKETCOIN_NODE_COINSTATS_H
 #define POCKETCOIN_NODE_COINSTATS_H
 
-#include <amount.h>
+#include <consensus/amount.h>
 #include <uint256.h>
 
 #include <cstdint>

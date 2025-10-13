@@ -5,7 +5,7 @@
 // https://www.apache.org/licenses/LICENSE-2.0
 
 #include "pocketdb/web/PocketFrontend.h"
-#include "fs.h"
+#include "util/fs.h"
 
 namespace PocketWeb
 {

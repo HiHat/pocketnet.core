@@ -8,16 +8,18 @@
 
 #include <addrdb.h>
 #include <addrman.h>
-#include <amount.h>
+#include <consensus/amount.h>
 #include <bloom.h>
 #include <chainparams.h>
-#include <compat.h>
+#include <compat/compat.h>
 #include <crypto/siphash.h>
 #include <hash.h>
 #include <i2p.h>
+#include <logging.h>
 #include <net_permissions.h>
 #include <netaddress.h>
 #include <netbase.h>
+#include <netgroup.h>
 #include <node/connection_types.h>
 #include <optional.h>
 #include <policy/feerate.h>
@@ -35,6 +37,7 @@
 #include <condition_variable>
 #include <cstdint>
 #include <deque>
+#include <list>
 #include <map>
 #include <thread>
 #include <memory>
@@ -87,9 +90,7 @@ static const bool DEFAULT_UPNP = false;
 /** The maximum number of peer connections to maintain. */
 static const unsigned int DEFAULT_MAX_PEER_CONNECTIONS = 125;
 /** The default for -maxuploadtarget. 0 = Unlimited */
-static const uint64_t DEFAULT_MAX_UPLOAD_TARGET = 0;
-/** The default timeframe for -maxuploadtarget. 1 day. */
-static const uint64_t MAX_UPLOAD_TIMEFRAME = 60 * 60 * 24;
+static constexpr uint64_t DEFAULT_MAX_UPLOAD_TARGET = 0;
 /** Default for blocks only*/
 static const bool DEFAULT_BLOCKSONLY = false;
 /** -peertimeout default */
@@ -764,7 +765,7 @@ public:
 
     void CloseSocketDisconnect();
 
-    void copyStats(CNodeStats &stats, const std::vector<bool> &m_asmap);
+    void copyStats(CNodeStats& stats, const std::vector<bool>& asmap);
 
     ServiceFlags GetLocalServices() const
     {
@@ -897,7 +898,6 @@ public:
         BanMan* m_banman = nullptr;
         unsigned int nSendBufferMaxSize = 0;
         unsigned int nReceiveFloodSize = 0;
-        uint64_t nMaxOutboundTimeframe = 0;
         uint64_t nMaxOutboundLimit = 0;
         int64_t m_peer_connect_timeout = DEFAULT_PEER_CONNECT_TIMEOUT;
         std::vector<std::string> vSeedNodes;
@@ -929,7 +929,6 @@ public:
         m_peer_connect_timeout = connOptions.m_peer_connect_timeout;
         {
             LOCK(cs_totalBytesSent);
-            nMaxOutboundTimeframe = connOptions.nMaxOutboundTimeframe;
             nMaxOutboundLimit = connOptions.nMaxOutboundLimit;
         }
         vWhitelistedRange = connOptions.vWhitelistedRange;
@@ -940,7 +939,9 @@ public:
         m_onion_binds = connOptions.onion_binds;
     }
 
-    CConnman(uint64_t seed0, uint64_t seed1, const CChainParams& params, bool network_active = true);
+    CConnman(uint64_t seed0, uint64_t seed1, AddrMan& addrman, const NetGroupManager& netgroupman,
+             bool network_active = true);
+
     ~CConnman();
     bool Start(CScheduler& scheduler, const Options& options);
 
@@ -958,6 +959,9 @@ public:
     void SetNetworkActive(bool active);
     void OpenNetworkConnection(const CAddress& addrConnect, bool fCountFailure, CSemaphoreGrant* grantOutbound, const char* strDest, ConnectionType conn_type);
     bool CheckIncomingNonce(uint64_t nonce);
+
+    // alias for thread safety annotations only, not defined
+    RecursiveMutex& GetNodesMutex() const LOCK_RETURNED(cs_vNodes);
 
     bool ForNode(NodeId id, std::function<bool(CNode* pnode)> func);
 
@@ -1065,13 +1069,8 @@ public:
     //! that peer during `net_processing.cpp:PushNodeVersion()`.
     ServiceFlags GetLocalServices() const;
 
-    //!set the max outbound target in bytes
-    void SetMaxOutboundTarget(uint64_t limit);
     uint64_t GetMaxOutboundTarget();
-
-    //!set the timeframe for the max outbound target
-    void SetMaxOutboundTimeframe(uint64_t timeframe);
-    uint64_t GetMaxOutboundTimeframe();
+    std::chrono::seconds GetMaxOutboundTimeframe();
 
     //! check if the outbound target is reached
     //! if param historicalBlockServingLimit is set true, the function will
@@ -1082,9 +1081,9 @@ public:
     //! in case of no limit, it will always response 0
     uint64_t GetOutboundTargetBytesLeft();
 
-    //! response the time in second left in the current max outbound cycle
-    //! in case of no limit, it will always response 0
-    uint64_t GetMaxOutboundTimeLeftInCycle();
+    //! returns the time left in the current max outbound cycle
+    //! in case of no limit, it will always return 0
+    std::chrono::seconds GetMaxOutboundTimeLeftInCycle();
 
     uint64_t GetTotalBytesRecv();
     uint64_t GetTotalBytesSent();
@@ -1102,10 +1101,12 @@ public:
     */
     int64_t PoissonNextSendInbound(int64_t now, int average_interval_seconds);
 
-    void SetAsmap(std::vector<bool> asmap) { addrman.m_asmap = std::move(asmap); }
+//    void SetAsmap(std::vector<bool> asmap) { addrman.m_asmap = std::move(asmap); }
 
     /** Return true if the peer has been connected for long enough to do inactivity checks. */
     bool RunInactivityChecks(const CNode& node) const;
+
+    bool MultipleManualOrFullOutboundConns(Network net) const EXCLUSIVE_LOCKS_REQUIRED(cs_vNodes);
 
 private:
     struct ListenSocket {
@@ -1217,6 +1218,18 @@ private:
      */
     std::vector<CAddress> GetCurrentBlockRelayOnlyConns() const;
 
+    /**
+     * Search for a "preferred" network, a reachable network to which we
+     * currently don't have any OUTBOUND_FULL_RELAY or MANUAL connections.
+     * There needs to be at least one address in AddrMan for a preferred
+     * network to be picked.
+     *
+     * @param[out]    network        Preferred network, if found.
+     *
+     * @return           bool        Whether a preferred network was found.
+     */
+    bool MaybePickPreferredNetwork(std::optional<Network>& network);
+
     // Whether the node should be passed out in ForEach* callbacks
     static bool NodeFullyConnected(const CNode* pnode);
 
@@ -1231,9 +1244,8 @@ private:
 
     // outbound limit & stats
     uint64_t nMaxOutboundTotalBytesSentInCycle GUARDED_BY(cs_totalBytesSent);
-    uint64_t nMaxOutboundCycleStartTime GUARDED_BY(cs_totalBytesSent);
+    std::chrono::seconds nMaxOutboundCycleStartTime GUARDED_BY(cs_totalBytesSent) {0};
     uint64_t nMaxOutboundLimit GUARDED_BY(cs_totalBytesSent);
-    uint64_t nMaxOutboundTimeframe GUARDED_BY(cs_totalBytesSent);
 
     // P2P timeout in seconds
     int64_t m_peer_connect_timeout;
@@ -1248,7 +1260,8 @@ private:
     std::vector<ListenSocket> vhListenSocket;
     std::atomic<bool> fNetworkActive{true};
     bool fAddressesInitialized{false};
-    CAddrMan addrman;
+    AddrMan& addrman;
+    const NetGroupManager& m_netgroupman;
     std::deque<std::string> m_addr_fetches GUARDED_BY(m_addr_fetches_mutex);
     RecursiveMutex m_addr_fetches_mutex;
     std::vector<std::string> vAddedNodes GUARDED_BY(cs_vAddedNodes);
@@ -1258,6 +1271,9 @@ private:
     mutable RecursiveMutex cs_vNodes;
     std::atomic<NodeId> nLastNodeId{0};
     unsigned int nPrevNodeCount{0};
+
+    // Stores number of full-tx connections (outbound and manual) per network
+    std::array<unsigned int, Network::NET_MAX> m_network_conn_counts GUARDED_BY(cs_vNodes) = {};
 
     /**
      * Cache responses to addr requests to minimize privacy leak.

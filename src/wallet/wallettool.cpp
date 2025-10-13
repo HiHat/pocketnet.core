@@ -3,7 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <fs.h>
+#include <util/fs.h>
 #include <util/system.h>
 #include <util/translation.h>
 #include <wallet/salvage.h>
@@ -108,7 +108,7 @@ static void WalletShowInfo(CWallet* wallet_instance)
 
 bool ExecuteWalletToolFunc(const std::string& command, const std::string& name)
 {
-    fs::path path = fs::absolute(name, GetWalletDir());
+    fs::path path = fs::absolute(fs::PathToString(name), GetWalletDir());
 
     if (command == "create") {
         std::shared_ptr<CWallet> wallet_instance = MakeWallet(name, path, /* create= */ true);

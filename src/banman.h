@@ -8,9 +8,9 @@
 
 #include <addrdb.h>
 #include <bloom.h>
-#include <fs.h>
 #include <net_types.h> // For banmap_t
 #include <sync.h>
+#include <util/fs.h>
 
 #include <chrono>
 #include <cstdint>

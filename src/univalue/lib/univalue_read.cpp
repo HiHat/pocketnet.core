@@ -2,11 +2,16 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <string.h>
-#include <vector>
-#include <stdio.h>
-#include "univalue.h"
+#include <univalue.h>
 #include "univalue_utffilter.h"
+
+#include <cstdio>
+#include <cstdint>
+#include <cstring>
+#include <string>
+#include <vector>
+
+static constexpr size_t MAX_JSON_DEPTH = 512;
 
 static bool json_isdigit(int ch)
 {
@@ -322,6 +327,9 @@ bool UniValue::read(const char *raw, size_t size)
                 UniValue *newTop = &(top->values.back());
                 stack.push_back(newTop);
             }
+
+            if (stack.size() > MAX_JSON_DEPTH)
+                return false;
 
             if (utyp == VOBJ)
                 setExpect(OBJ_NAME);

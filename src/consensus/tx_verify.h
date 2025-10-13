@@ -5,7 +5,7 @@
 #ifndef POCKETCOIN_CONSENSUS_TX_VERIFY_H
 #define POCKETCOIN_CONSENSUS_TX_VERIFY_H
 
-#include <amount.h>
+#include <consensus/amount.h>
 #include <chainparams.h>
 
 #include <stdint.h>

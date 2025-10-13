@@ -5,7 +5,8 @@
 
 #include <rpc/request.h>
 
-#include <fs.h>
+#include <util/fs.h>
+#include <util/fs_helpers.h>
 
 
 void JSONRPCRequest::parse(const UniValue& valRequest)

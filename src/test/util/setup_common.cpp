@@ -28,6 +28,8 @@
 #include <util/memory.h>
 #include <util/strencodings.h>
 #include <util/string.h>
+#include <util/thread.h>
+#include <util/threadnames.h>
 #include <util/time.h>
 #include <util/translation.h>
 #include <util/url.h>
@@ -81,8 +83,11 @@ std::ostream& operator<<(std::ostream& os, const uint256& num)
 }
 
 BasicTestingSetup::BasicTestingSetup(const std::string& chainName, const std::vector<const char*>& extra_args)
-    : m_path_root{fs::temp_directory_path() / "test_common_pocketnet" / g_insecure_rand_ctx_temp_path.rand256().ToString()}
+    : m_path_root{fs::temp_directory_path() / "test_common_pocketnet" / g_insecure_rand_ctx_temp_path.rand256().ToString(),
+      m_args{}
+}
 {
+    m_node.args = &gArgs;
     const std::vector<const char*> arguments = Cat(
         {
             "dummy",
@@ -98,10 +103,10 @@ BasicTestingSetup::BasicTestingSetup(const std::string& chainName, const std::ve
         extra_args);
     util::ThreadRename("test");
     fs::create_directories(m_path_root);
-    gArgs.ForceSetArg("-datadir", m_path_root.string());
+    gArgs.ForceSetArg("-datadir", fs::PathToString(m_path_root));
     ClearDatadirCache();
     {
-        SetupServerArgs(m_node);
+        SetupServerArgs(*m_node.args);
         std::string error;
         const bool success{m_node.args->ParseParameters(arguments.size(), arguments.data(), error)};
         assert(success);
@@ -151,7 +156,7 @@ TestingSetup::TestingSetup(const std::string& chainName, const std::vector<const
 
     // We have to run a scheduler thread to prevent ActivateBestChain
     // from blocking due to queue overrun.
-    threadGroup.create_thread([&] { TraceThread("scheduler", [&] { m_node.scheduler->serviceQueue(); }); });
+    threadGroup.create_thread([&] { util::TraceThread("scheduler", [&] { m_node.scheduler->serviceQueue(); }); });
     GetMainSignals().RegisterBackgroundSignalScheduler(*m_node.scheduler);
 
     pblocktree.reset(new CBlockTreeDB(1 << 20, true));
@@ -184,10 +189,17 @@ TestingSetup::TestingSetup(const std::string& chainName, const std::vector<const
     }
     g_parallel_script_checks = true;
 
+    m_node.netgroupman = std::make_unique<NetGroupManager>(/*asmap=*/std::vector<bool>());
+    m_node.addrman = std::make_unique<AddrMan>(*m_node.netgroupman,
+                                               /*deterministic=*/false,
+                                               m_node.args->GetIntArg("-checkaddrman", 0));
     m_node.banman = MakeUnique<BanMan>(GetDataDir() / "banlist.dat", nullptr, DEFAULT_MISBEHAVING_BANTIME);
-    m_node.connman = MakeUnique<CConnman>(0x1337, 0x1337, chainparams); // Deterministic randomness for tests.
+//    m_node.connman = MakeUnique<CConnman>(0x1337, 0x1337, chainparams); // Deterministic randomness for tests.
+    m_node.connman = std::make_unique<ConnmanTestMsg>(0x1337, 0x1337, *m_node.addrman, *m_node.netgroupman); // Deterministic randomness for tests.
 
-    m_node.peerman = MakeUnique<PeerManager>(chainparams, *m_node.connman, m_node.banman.get(), *m_node.scheduler, *m_node.chainman, *m_node.mempool);
+    m_node.peerman = MakeUnique<PeerManager>(chainparams, *m_node.connman, *m_node.addrman,
+                                             m_node.banman.get(), *m_node.scheduler, *m_node.chainman,
+                                             *m_node.mempool);
     RegisterValidationInterface(m_node.peerman.get());
 
     g_txindex = MakeUnique<TxIndex>(0, false, IsChainReindex());
@@ -204,6 +216,8 @@ TestingSetup::~TestingSetup()
     GetMainSignals().UnregisterBackgroundSignalScheduler();
     m_node.connman.reset();
     m_node.banman.reset();
+    m_node.addrman.reset();
+    m_node.netgroupman.reset();
     m_node.args = nullptr;
     UnloadBlockIndex(m_node.mempool.get(), *m_node.chainman);
     m_node.mempool.reset();

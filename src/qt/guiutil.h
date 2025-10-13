@@ -5,10 +5,10 @@
 #ifndef POCKETCOIN_QT_GUIUTIL_H
 #define POCKETCOIN_QT_GUIUTIL_H
 
-#include <amount.h>
-#include <fs.h>
+#include <consensus/amount.h>
 #include <net.h>
 #include <netaddress.h>
+#include <util/fs.h>
 
 #include <QApplication>
 #include <QEvent>

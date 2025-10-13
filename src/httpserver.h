@@ -186,6 +186,7 @@ private:
     struct event* ev;
 };
 
+
 /** Simple one-shot callback timer to be used by the RPC mechanism to e.g.
  * re-lock the wallet.
  */

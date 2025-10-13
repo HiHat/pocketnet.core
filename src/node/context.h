@@ -12,10 +12,12 @@
 
 class ArgsManager;
 class BanMan;
+class AddrMan;
 class CConnman;
 class CScheduler;
 class CTxMemPool;
 class ChainstateManager;
+class NetGroupManager;
 class PeerManager;
 namespace interfaces {
 class Chain;
@@ -34,8 +36,10 @@ class WalletClient;
 //! any member functions. It should just be a collection of references that can
 //! be used without pulling in unwanted dependencies or functionality.
 struct NodeContext {
+    std::unique_ptr<AddrMan> addrman;
     std::unique_ptr<CConnman> connman;
     std::unique_ptr<CTxMemPool> mempool;
+    std::unique_ptr<const NetGroupManager> netgroupman;
     std::unique_ptr<PeerManager> peerman;
     ChainstateManager* chainman{nullptr}; // Currently a raw pointer because the memory is not managed by this struct
     std::unique_ptr<BanMan> banman;

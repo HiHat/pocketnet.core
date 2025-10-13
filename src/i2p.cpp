@@ -4,7 +4,7 @@
 
 #include <chainparams.h>
 // #include <common/args.h>
-#include <compat.h>
+#include <compat/compat.h>
 #include <compat/endian.h>
 #include <crypto/sha256.h>
 #include <i2p.h>
@@ -14,11 +14,12 @@
 #include <random.h>
 #include <sync.h>
 #include <tinyformat.h>
-#include <fs.h>
+#include <util/fs.h>
 #include <util/readwritefile.h>
 #include <util/sock.h>
 #include <util/spanparsing.h>
 #include <util/strencodings.h>
+#include <util/system.h>
 #include <threadinterrupt.h>
 
 #include <chrono>
@@ -71,12 +72,11 @@ static std::string SwapBase64(const std::string& from)
 static Binary DecodeI2PBase64(const std::string& i2p_b64)
 {
     const std::string& std_b64 = SwapBase64(i2p_b64);
-    bool invalid;
-    Binary decoded = DecodeBase64(std_b64.c_str(), &invalid);
-    if (invalid) {
+    auto decoded = DecodeBase64(std_b64);
+    if (!decoded) {
         throw std::runtime_error(strprintf("Cannot decode Base64: \"%s\"", i2p_b64));
     }
-    return decoded;
+    return std::move(*decoded);
 }
 
 /**
@@ -372,7 +372,8 @@ void Session::GenerateAndSavePrivateKey(const Sock& sock)
     if (!WriteBinaryFile(m_private_key_file,
                          std::string(m_private_key.begin(), m_private_key.end()))) {
         throw std::runtime_error(
-            strprintf("Cannot save I2P private key to %s", m_private_key_file));
+//            strprintf("Cannot save I2P private key to %s", m_private_key_file));
+            strprintf("Cannot save I2P private key to %s", fs::quoted(fs::PathToString(m_private_key_file))));
     }
 }
 

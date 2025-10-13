@@ -388,6 +388,7 @@ POCKETCOIN_CORE_H = \
     checkqueue.h \
     clientversion.h \
     coins.h \
+    common/init.h \
     compat.h \
     compat/assumptions.h \
     compat/byteswap.h \
@@ -404,7 +405,6 @@ POCKETCOIN_CORE_H = \
     dbwrapper.h \
     ldb/ldb.h \
     flatfile.h \
-    fs.h \
     eventloop.h \
     httprpc.h \
     httpserver.h \
@@ -436,8 +436,10 @@ POCKETCOIN_CORE_H = \
     netmessagemaker.h \
     node/coin.h \
     node/coinstats.h \
+    node/coins_view_args.h \
     node/connection_types.h \
     node/context.h \
+    node/database_args.h \
     node/eviction.h \
     node/psbt.h \
     node/transaction.h \
@@ -501,7 +503,11 @@ POCKETCOIN_CORE_H = \
     util/bytevectorhash.h \
     util/check.h \
     util/error.h \
+    util/exception.h \
     util/fees.h \
+    util/getuniquepath.h \
+    util/fs.h \
+    util/fs_helpers.h \
     util/golombrice.h \
     util/macros.h \
     util/memory.h \
@@ -510,16 +516,19 @@ POCKETCOIN_CORE_H = \
     util/rbf.h \
     util/readwritefile.h \
     util/ref.h \
+    util/serfloat.h \
     util/settings.h \
     util/sock.h \
     util/spanparsing.h \
     util/string.h \
     util/syserror.h \
     util/system.h \
+    util/thread.h \
     util/threadnames.h \
     util/time.h \
     util/trace.h \
     util/translation.h \
+    util/types.h \
     util/ui_change_type.h \
     util/url.h \
     util/vector.h \
@@ -594,10 +603,13 @@ libpocketcoin_server_a_SOURCES = \
     miner.cpp \
     net.cpp \
     net_processing.cpp \
+    net_types.cpp \
     node/coin.cpp \
+    node/coins_view_args.cpp \
     node/coinstats.cpp \
     node/connection_types.cpp \
     node/context.cpp \
+    node/database_args.cpp \
     node/eviction.cpp \
     node/psbt.cpp \
     node/transaction.cpp \
@@ -790,6 +802,7 @@ libpocketcoin_common_a_SOURCES = \
   bloom.cpp \
   chainparams.cpp \
   coins.cpp \
+  common/init.cpp \
   compressor.cpp \
   core_read.cpp \
   core_write.cpp \
@@ -828,7 +841,6 @@ libpocketcoin_util_a_SOURCES = \
   compat/glibc_sanity.cpp \
   compat/glibcxx_sanity.cpp \
   compat/strnlen.cpp \
-  fs.cpp \
   interfaces/handler.cpp \
   logging.cpp \
   random.cpp \
@@ -841,16 +853,22 @@ libpocketcoin_util_a_SOURCES = \
   util/bip32.cpp \
   util/bytevectorhash.cpp \
   util/error.cpp \
+  util/exception.cpp \
   util/fees.cpp \
+  util/getuniquepath.cpp \
+  util/fs.cpp \
+  util/fs_helpers.cpp \
   util/html.cpp \
-  util/sock.cpp \
-  util/syserror.cpp \
-  util/system.cpp \
   util/message.cpp \
   util/moneystr.cpp \
   util/rbf.cpp \
   util/readwritefile.cpp \
+  util/serfloat.cpp \
   util/settings.cpp \
+  util/sock.cpp \
+  util/syserror.cpp \
+  util/system.cpp \
+  util/thread.cpp \
   util/threadnames.cpp \
   util/spanparsing.cpp \
   util/strencodings.cpp \

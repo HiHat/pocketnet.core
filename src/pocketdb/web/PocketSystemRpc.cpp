@@ -205,12 +205,12 @@ namespace PocketWeb::PocketWebRpc
         entry.pushKV("proxies", proxies);
 
         // Ports information
-        int64_t nodePort = gArgs.GetArg("-port", Params().GetDefaultPort());
-        int64_t publicPort = gArgs.GetArg("-publicrpcport", BaseParams().PublicRPCPort());
-        int64_t staticPort = gArgs.GetArg("-staticrpcport", BaseParams().StaticRPCPort());
-        int64_t restPort = gArgs.GetArg("-restport", BaseParams().RestPort());
-        int64_t wsPort = gArgs.GetArg("-wsport", BaseParams().WsPort());
-        int64_t wssPort = gArgs.GetArg("-wssport", BaseParams().WssPort());
+        int64_t nodePort = gArgs.GetIntArg("-port", Params().GetDefaultPort());
+        int64_t publicPort = gArgs.GetIntArg("-publicrpcport", BaseParams().PublicRPCPort());
+        int64_t staticPort = gArgs.GetIntArg("-staticrpcport", BaseParams().StaticRPCPort());
+        int64_t restPort = gArgs.GetIntArg("-restport", BaseParams().RestPort());
+        int64_t wsPort = gArgs.GetIntArg("-wsport", BaseParams().WsPort());
+        int64_t wssPort = gArgs.GetIntArg("-wssport", BaseParams().WssPort());
 
         UniValue ports(UniValue::VOBJ);
         ports.pushKV("node", nodePort);

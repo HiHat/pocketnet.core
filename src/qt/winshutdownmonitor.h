@@ -10,7 +10,7 @@
 #include <QString>
 
 //TODO compat with all required defines because there is a big mess up with including only windows.h
-#include <compat.h> // for HWND
+#include <compat/compat.h> // for HWND
 
 #include <QAbstractNativeEventFilter>
 

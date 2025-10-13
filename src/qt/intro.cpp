@@ -7,7 +7,6 @@
 #endif
 
 #include <chainparams.h>
-#include <fs.h>
 #include <qt/intro.h>
 #include <qt/forms/ui_intro.h>
 
@@ -16,6 +15,8 @@
 #include <qt/optionsmodel.h>
 
 #include <interfaces/node.h>
+#include <util/fs.h>
+#include <util/fs_helpers.h>
 #include <util/system.h>
 
 #include <QFileDialog>
@@ -244,7 +245,7 @@ bool Intro::showIfNeeded(bool& did_show_intro, bool& prune)
      * (to be consistent with pocketcoind behavior)
      */
     if(dataDir != GUIUtil::getDefaultDataDirectory()) {
-        gArgs.SoftSetArg("-datadir", GUIUtil::qstringToBoostPath(dataDir).string()); // use OS locale for path setting
+        gArgs.SoftSetArg("-datadir", fs::PathToString(GUIUtil::qstringToBoostPath(dataDir))); // use OS locale for path setting
     }
     return true;
 }

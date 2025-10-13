@@ -6,9 +6,9 @@
 
 #include <wallet/load.h>
 
-#include <fs.h>
 #include <interfaces/chain.h>
 #include <scheduler.h>
+#include <util/fs.h>
 #include <util/string.h>
 #include <util/system.h>
 #include <util/translation.h>
@@ -20,25 +20,25 @@
 bool VerifyWallets(interfaces::Chain& chain)
 {
     if (gArgs.IsArgSet("-walletdir")) {
-        fs::path wallet_dir = gArgs.GetArg("-walletdir", "");
+        fs::path wallet_dir = fs::PathToString(gArgs.GetArg("-walletdir", ""));
         boost::system::error_code error;
         // The canonical path cleans the path, preventing >1 Berkeley environment instances for the same directory
         fs::path canonical_wallet_dir = fs::canonical(wallet_dir, error);
         if (error || !fs::exists(wallet_dir)) {
-            chain.initError(strprintf(_("Specified -walletdir \"%s\" does not exist"), wallet_dir.string()));
+            chain.initError(strprintf(_("Specified -walletdir \"%s\" does not exist"), fs::PathToString(wallet_dir)));
             return false;
         } else if (!fs::is_directory(wallet_dir)) {
-            chain.initError(strprintf(_("Specified -walletdir \"%s\" is not a directory"), wallet_dir.string()));
+            chain.initError(strprintf(_("Specified -walletdir \"%s\" is not a directory"), fs::PathToString(wallet_dir)));
             return false;
         // The canonical path transforms relative paths into absolute ones, so we check the non-canonical version
         } else if (!wallet_dir.is_absolute()) {
-            chain.initError(strprintf(_("Specified -walletdir \"%s\" is a relative path"), wallet_dir.string()));
+            chain.initError(strprintf(_("Specified -walletdir \"%s\" is a relative path"), fs::PathToString(wallet_dir)));
             return false;
         }
-        gArgs.ForceSetArg("-walletdir", canonical_wallet_dir.string());
+        gArgs.ForceSetArg("-walletdir", fs::PathToString(canonical_wallet_dir));
     }
 
-    LogPrintf("Using wallet directory %s\n", GetWalletDir().string());
+    LogPrintf("Using wallet directory %s\n", fs::PathToString(GetWalletDir()));
 
     chain.initMessage(_("Verifying wallet(s)...").translated);
 
@@ -86,7 +86,7 @@ bool LoadWallets(interfaces::Chain& chain)
     try {
         std::set<fs::path> wallet_paths;
         for (const std::string& name : gArgs.GetArgs("-wallet")) {
-            if (!wallet_paths.insert(name).second) {
+            if (!wallet_paths.insert(fs::PathToString(name)).second) {
                 continue;
             }
             DatabaseOptions options;

@@ -276,11 +276,12 @@ static bool ThreadHTTP(struct event_base *base)
 /** Bind HTTP server to specified addresses */
 static bool HTTPBindAddresses()
 {
-    int securePort = gArgs.GetArg("-rpcport", BaseParams().RPCPort());
-    int publicPort = gArgs.GetArg("-publicrpcport", BaseParams().PublicRPCPort());
-    int publicTlsPort = gArgs.GetArg("-publictlsrpcport", BaseParams().PublicTlsRPCPort());
-    int staticPort = gArgs.GetArg("-staticrpcport", BaseParams().StaticRPCPort());
-    int restPort = gArgs.GetArg("-restport", BaseParams().RestPort());
+//    int securePort = gArgs.GetIntArg("-rpcport", BaseParams().RPCPort());
+    uint16_t http_port{static_cast<uint16_t>(gArgs.GetIntArg("-rpcport", BaseParams().RPCPort()))};
+    int publicPort = gArgs.GetIntArg("-publicrpcport", BaseParams().PublicRPCPort());
+    int publicTlsPort = gArgs.GetIntArg("-publictlsrpcport", BaseParams().PublicTlsRPCPort());
+    int staticPort = gArgs.GetIntArg("-staticrpcport", BaseParams().StaticRPCPort());
+    int restPort = gArgs.GetIntArg("-restport", BaseParams().RestPort());
     int bindAddresses = 0;
 
     // Determine what addresses to bind to
@@ -288,8 +289,8 @@ static bool HTTPBindAddresses()
     {
         if (!(gArgs.IsArgSet("-rpcallowip") && gArgs.IsArgSet("-rpcbind")))
         { // Default to loopback if not allowing external IPs
-            g_socket->BindAddress("::1", securePort, true);
-            g_socket->BindAddress("127.0.0.1", securePort, true);
+            g_socket->BindAddress("::1", http_port, true);
+            g_socket->BindAddress("127.0.0.1", http_port, true);
             if (gArgs.IsArgSet("-rpcallowip"))
             {
                 LogPrintf("WARNING: option -rpcallowip was specified without -rpcbind; this doesn't usually make sense\n");
@@ -304,7 +305,8 @@ static bool HTTPBindAddresses()
             for (const std::string& strRPCBind: gArgs.GetArgs("-rpcbind"))
             {
                 std::string host;
-                int port = securePort;
+//                int port = securePort;
+                uint16_t port{http_port};
                 SplitHostPort(strRPCBind, port, host);
                 g_socket->BindAddress(host, port, true);
             }
@@ -391,12 +393,12 @@ bool InitHTTPServer(const util::Ref& context)
     evthread_use_pthreads();
 #endif
     
-    int timeout = gArgs.GetArg("-rpcservertimeout", DEFAULT_HTTP_SERVER_TIMEOUT);
-    int workQueueMainDepth = std::max((long) gArgs.GetArg("-rpcworkqueue", DEFAULT_HTTP_WORKQUEUE), 1L);
-    int workQueuePostDepth = std::max((long) gArgs.GetArg("-rpcpostworkqueue", DEFAULT_HTTP_POST_WORKQUEUE), 1L);
-    int workQueuePublicDepth = std::max((long) gArgs.GetArg("-rpcpublicworkqueue", DEFAULT_HTTP_PUBLIC_WORKQUEUE), 1L);
-    int workQueueStaticDepth = std::max((long) gArgs.GetArg("-rpcstaticworkqueue", DEFAULT_HTTP_STATIC_WORKQUEUE), 1L);
-    int workQueueRestDepth = std::max((long) gArgs.GetArg("-rpcrestworkqueue", DEFAULT_HTTP_REST_WORKQUEUE), 1L);
+    int timeout = gArgs.GetIntArg("-rpcservertimeout", DEFAULT_HTTP_SERVER_TIMEOUT);
+    int workQueueMainDepth = std::max((long) gArgs.GetIntArg("-rpcworkqueue", DEFAULT_HTTP_WORKQUEUE), 1L);
+    int workQueuePostDepth = std::max((long) gArgs.GetIntArg("-rpcpostworkqueue", DEFAULT_HTTP_POST_WORKQUEUE), 1L);
+    int workQueuePublicDepth = std::max((long) gArgs.GetIntArg("-rpcpublicworkqueue", DEFAULT_HTTP_PUBLIC_WORKQUEUE), 1L);
+    int workQueueStaticDepth = std::max((long) gArgs.GetIntArg("-rpcstaticworkqueue", DEFAULT_HTTP_STATIC_WORKQUEUE), 1L);
+    int workQueueRestDepth = std::max((long) gArgs.GetIntArg("-rpcrestworkqueue", DEFAULT_HTTP_REST_WORKQUEUE), 1L);
 
     raii_event_base base_ctr = obtain_event_base();
     eventBase = base_ctr.get();
@@ -464,11 +466,11 @@ bool UpdateHTTPServerLogging(bool enable)
 void StartHTTPServer()
 {
     LogPrint(BCLog::HTTP, "Starting HTTP server\n");
-    int rpcMainThreads = std::max((long) gArgs.GetArg("-rpcthreads", DEFAULT_HTTP_THREADS), 1L);
-    int rpcPostThreads = std::max((long) gArgs.GetArg("-rpcpostthreads", DEFAULT_HTTP_POST_THREADS), 1L);
-    int rpcPublicThreads = std::max((long) gArgs.GetArg("-rpcpublicthreads", DEFAULT_HTTP_PUBLIC_THREADS), 1L);
-    int rpcStaticThreads = std::max((long) gArgs.GetArg("-rpcstaticthreads", DEFAULT_HTTP_STATIC_THREADS), 1L);
-    int rpcRestThreads = std::max((long) gArgs.GetArg("-rpcrestthreads", DEFAULT_HTTP_REST_THREADS), 1L);
+    int rpcMainThreads = std::max((long) gArgs.GetIntArg("-rpcthreads", DEFAULT_HTTP_THREADS), 1L);
+    int rpcPostThreads = std::max((long) gArgs.GetIntArg("-rpcpostthreads", DEFAULT_HTTP_POST_THREADS), 1L);
+    int rpcPublicThreads = std::max((long) gArgs.GetIntArg("-rpcpublicthreads", DEFAULT_HTTP_PUBLIC_THREADS), 1L);
+    int rpcStaticThreads = std::max((long) gArgs.GetIntArg("-rpcstaticthreads", DEFAULT_HTTP_STATIC_THREADS), 1L);
+    int rpcRestThreads = std::max((long) gArgs.GetIntArg("-rpcrestthreads", DEFAULT_HTTP_REST_THREADS), 1L);
 
     g_thread_http = std::thread(ThreadHTTP, eventBase);
 
@@ -586,7 +588,7 @@ HTTPSocket::HTTPSocket(struct event_base *base, int timeout, int queueDepth, boo
         return;
     }
 
-    evhttp_set_timeout(m_http, gArgs.GetArg("-rpcservertimeout", DEFAULT_HTTP_SERVER_TIMEOUT));
+    evhttp_set_timeout(m_http, gArgs.GetIntArg("-rpcservertimeout", DEFAULT_HTTP_SERVER_TIMEOUT));
     evhttp_set_max_headers_size(m_http, MAX_HEADERS_SIZE);
     evhttp_set_max_body_size(m_http, MAX_SIZE);
     evhttp_set_gencb(m_http, http_request_cb, (void*) this);

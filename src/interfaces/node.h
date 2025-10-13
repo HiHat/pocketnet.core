@@ -5,7 +5,7 @@
 #ifndef POCKETCOIN_INTERFACES_NODE_H
 #define POCKETCOIN_INTERFACES_NODE_H
 
-#include <amount.h>     // For CAmount
+#include <consensus/amount.h>     // For CAmount
 #include <net.h>        // For CConnman::NumConnections
 #include <net_types.h>  // For banmap_t
 #include <netaddress.h> // For Network

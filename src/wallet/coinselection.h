@@ -5,7 +5,7 @@
 #ifndef POCKETCOIN_WALLET_COINSELECTION_H
 #define POCKETCOIN_WALLET_COINSELECTION_H
 
-#include <amount.h>
+#include <consensus/amount.h>
 #include <primitives/transaction.h>
 #include <random.h>
 

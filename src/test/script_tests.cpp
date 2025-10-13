@@ -5,7 +5,6 @@
 #include <test/data/script_tests.json.h>
 
 #include <core_io.h>
-#include <fs.h>
 #include <key.h>
 #include <rpc/util.h>
 #include <script/script.h>
@@ -16,6 +15,7 @@
 #include <streams.h>
 #include <test/util/setup_common.h>
 #include <test/util/transaction_utils.h>
+#include <util/fs.h>
 #include <util/strencodings.h>
 #include <util/system.h>
 
@@ -1479,7 +1479,7 @@ BOOST_AUTO_TEST_CASE(script_HasValidOps)
 static CMutableTransaction TxFromHex(const std::string& str)
 {
     CMutableTransaction tx;
-    VectorReader(SER_DISK, SERIALIZE_TRANSACTION_NO_WITNESS, ParseHex(str), 0) >> tx;
+    SpanReader{SER_DISK, SERIALIZE_TRANSACTION_NO_WITNESS, ParseHex(str)} >> tx;
     return tx;
 }
 
@@ -1489,7 +1489,7 @@ static std::vector<CTxOut> TxOutsFromJSON(const UniValue& univalue)
     std::vector<CTxOut> prevouts;
     for (size_t i = 0; i < univalue.size(); ++i) {
         CTxOut txout;
-        VectorReader(SER_DISK, 0, ParseHex(univalue[i].get_str()), 0) >> txout;
+        SpanReader{SER_DISK, 0, ParseHex(univalue[i].get_str())} >> txout;
         prevouts.push_back(std::move(txout));
     }
     return prevouts;

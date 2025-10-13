@@ -102,3 +102,29 @@ int DeformatSubVersion(const std::string& subVer)
 
     return sum;
 }
+
+std::string CopyrightHolders(const std::string& strPrefix)
+{
+    const auto copyright_devs = strprintf(_(COPYRIGHT_HOLDERS).translated, COPYRIGHT_HOLDERS_SUBSTITUTION);
+    std::string strCopyrightHolders = strPrefix + copyright_devs;
+    return strCopyrightHolders;
+}
+
+std::string LicenseInfo()
+{
+    const std::string URL_SOURCE_CODE = "<https://github.com/pocketnetteam/pocketnet.core>";
+
+    return CopyrightHolders(strprintf(_("Copyright (C) %i-%i").translated, 2018, COPYRIGHT_YEAR) + " ") + "\n" +
+           "\n" +
+           strprintf(_("Please contribute if you find %s useful."
+                       "\nVisit %s for further information about the software.").translated,
+               PACKAGE_NAME, "<" PACKAGE_URL ">") +
+           "\n" +
+           strprintf(_("The source code is available from %s.").translated,
+               URL_SOURCE_CODE) +
+           "\n" +
+           "\n" +
+           _("This is experimental software.").translated + "\n" +
+           strprintf(_("Distributed under the APACHE v2.0 software license, see the accompanying file %s").translated, "LICENSE") +
+           "\n";
+}

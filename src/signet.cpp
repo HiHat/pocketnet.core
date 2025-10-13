@@ -99,7 +99,7 @@ Optional<SignetTxs> SignetTxs::Create(const CBlock& block, const CScript& challe
         // no signet solution -- allow this to support OP_TRUE as trivial block challenge
     } else {
         try {
-            VectorReader v(SER_NETWORK, INIT_PROTO_VERSION, signet_solution, 0);
+            SpanReader v{SER_NETWORK, INIT_PROTO_VERSION, signet_solution};
             v >> tx_spending.vin[0].scriptSig;
             v >> tx_spending.vin[0].scriptWitness.stack;
             if (!v.empty()) return nullopt; // extraneous data encountered

@@ -10,8 +10,10 @@
 #endif
 
 #include <attributes.h>
-#include <compat.h>
+#include <compat/compat.h>
+#include <crypto/siphash.h>
 #include <prevector.h>
+#include <random.h>
 #include <serialize.h>
 #include <tinyformat.h>
 #include <util/strencodings.h>
@@ -61,7 +63,7 @@ enum Network
     NET_CJDNS,
 
     /// A set of addresses that represent the hash of a string or FQDN. We use
-    /// them in CAddrMan to keep track of which DNS seeds were used.
+    /// them in AddrMan to keep track of which DNS seeds were used.
     NET_INTERNAL,
 
     /// Dummy value to indicate the number of NET_* constants.
@@ -208,12 +210,6 @@ class CNetAddr
         //! Whether this address has a linked IPv4 address (see GetLinkedIPv4()).
         bool HasLinkedIPv4() const;
 
-        // The AS on the BGP path to the node we use to diversify
-        // peers in AddrMan bucketing based on the AS infrastructure.
-        // The ip->AS mapping depends on how asmap is constructed.
-        uint32_t GetMappedAS(const std::vector<bool> &asmap) const;
-
-        std::vector<unsigned char> GetGroup(const std::vector<bool> &asmap) const;
         std::vector<unsigned char> GetAddrBytes() const;
         int GetReachabilityFrom(const CNetAddr *paddrPartner = nullptr) const;
 
@@ -232,6 +228,18 @@ class CNetAddr
             return IsIPv4() || IsIPv6() || IsTor() || IsI2P() || IsCJDNS();
         }
 
+/*
+        enum class Encoding {
+            V1,
+            V2, //!< BIP155 encoding
+        };
+        struct SerParams {
+            const Encoding enc;
+        };
+        static constexpr SerParams V1{Encoding::V1};
+        static constexpr SerParams V2{Encoding::V2};
+*/
+
         /**
          * Serialize to a stream.
          */
@@ -239,6 +247,7 @@ class CNetAddr
         void Serialize(Stream& s) const
         {
             if (s.GetVersion() & ADDRV2_FORMAT) {
+//        if (s.GetParams().enc == Encoding::V2) {
                 SerializeV2Stream(s);
             } else {
                 SerializeV1Stream(s);
@@ -252,6 +261,7 @@ class CNetAddr
         void Unserialize(Stream& s)
         {
             if (s.GetVersion() & ADDRV2_FORMAT) {
+//            if (s.GetParams().enc == Encoding::V2) {
                 UnserializeV2Stream(s);
             } else {
                 UnserializeV1Stream(s);
@@ -433,7 +443,7 @@ class CNetAddr
 
             if (SetNetFromBIP155Network(bip155_net, address_size)) {
                 m_addr.resize(address_size);
-                s >> MakeSpan(m_addr);
+                s >> Span{m_addr};
 
                 if (m_net != NET_IPV6) {
                     return;
@@ -531,7 +541,8 @@ class CSubNet
                 // serialized form.
                 unsigned char dummy[12] = {0};
                 READWRITE(dummy);
-                READWRITE(MakeSpan(obj.netmask).first(4));
+//                READWRITE(MakeSpan(obj.netmask).first(4));
+                READWRITE(Span{obj.netmask}.first(4));
             } else {
                 READWRITE(obj.netmask);
             }
@@ -571,9 +582,36 @@ class CService : public CNetAddr
         {
             READWRITEAS(CNetAddr, obj);
             READWRITE(Using<BigEndianFormatter<2>>(obj.port));
+//            READWRITE(AsBase<CNetAddr>(obj), Using<BigEndianFormatter<2>>(obj.port));
         }
 
-        friend CService MaybeFlipIPv6toCJDNS(const CService& service);
+    friend class CServiceHash;
+    friend CService MaybeFlipIPv6toCJDNS(const CService& service);
+};
+
+class CServiceHash
+{
+public:
+    CServiceHash()
+        : m_salt_k0{GetRand<uint64_t>()},
+          m_salt_k1{GetRand<uint64_t>()}
+    {
+    }
+
+    CServiceHash(uint64_t salt_k0, uint64_t salt_k1) : m_salt_k0{salt_k0}, m_salt_k1{salt_k1} {}
+
+    size_t operator()(const CService& a) const noexcept
+    {
+        CSipHasher hasher(m_salt_k0, m_salt_k1);
+        hasher.Write(a.m_net);
+        hasher.Write(a.port);
+        hasher.Write(a.m_addr.data(), a.m_addr.size());
+        return static_cast<size_t>(hasher.Finalize());
+    }
+
+private:
+    const uint64_t m_salt_k0;
+    const uint64_t m_salt_k1;
 };
 
 bool SanityCheckASMap(const std::vector<bool>& asmap);

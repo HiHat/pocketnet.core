@@ -5,7 +5,7 @@
 #ifndef POCKETCOIN_QT_TRANSACTIONFILTERPROXY_H
 #define POCKETCOIN_QT_TRANSACTIONFILTERPROXY_H
 
-#include <amount.h>
+#include <consensus/amount.h>
 
 #include <QDateTime>
 #include <QSortFilterProxyModel>

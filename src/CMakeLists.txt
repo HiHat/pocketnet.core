@@ -758,11 +758,6 @@ add_library(${POCKETCOIN_UTIL}
                 threadsafety.h
                 threadinterrupt.h
                 threadinterrupt.cpp
-                util/memory.h
-                util/moneystr.h
-                util/moneystr.cpp
-                util/time.h
-                util/time.cpp
                 util/html.h
                 util/html.cpp
                 util/asmap.cpp
@@ -774,17 +769,26 @@ add_library(${POCKETCOIN_UTIL}
                 util/check.h
                 util/error.cpp
                 util/error.h
+                util/exception.cpp
+                util/exception.h
                 util/fees.cpp
                 util/fees.h
+                util/getuniquepath.h
+                util/getuniquepath.cpp
                 util/golombrice.h
                 util/macros.h
+                util/memory.h
                 util/message.cpp
                 util/message.h
+                util/moneystr.h
+                util/moneystr.cpp
                 util/rbf.cpp
                 util/rbf.h
                 util/readwritefile.h
                 util/readwritefile.cpp
                 util/ref.h
+                util/serfloat.h
+                util/serfloat.cpp
                 util/settings.cpp
                 util/settings.h
                 util/sock.h
@@ -795,10 +799,17 @@ add_library(${POCKETCOIN_UTIL}
                 util/string.h
                 util/syserror.h
                 util/syserror.cpp
+                util/system.h
+                util/system.cpp
+                util/thread.cpp
+                util/thread.h
                 util/threadnames.cpp
                 util/threadnames.h
+                util/time.h
+                util/time.cpp
                 util/trace.h
                 util/translation.h
+                util/types.h
                 util/ui_change_type.h
                 util/url.cpp
                 util/url.h
@@ -812,8 +823,6 @@ add_library(${POCKETCOIN_UTIL}
                 node/ui_interface.h
                 node/ui_interface.cpp
                 node/utxo_snapshot.h
-                util/system.h
-                util/system.cpp
                 chainparamsbase.h
                 chainparamsbase.cpp
                 chainparamsseeds.h
@@ -962,10 +971,14 @@ add_library(${POCKETCOIN_SERVER}
         node/coin.cpp
         node/coinstats.h
         node/coinstats.cpp
+        node/coins_view_args.h
+        node/coins_view_args.cpp
         node/connection_types.h
         node/connection_types.cpp
         node/context.h
         node/context.cpp
+        node/database_args.h
+        node/database_args.cpp
         node/eviction.h
         node/eviction.cpp
         node/psbt.h
@@ -994,6 +1007,8 @@ add_library(${POCKETCOIN_SERVER}
         core_write.cpp
         coins.h
         coins.cpp
+        common/init.cpp
+        common/init.h
         rest.cpp
         core_memusage.h
         index/base.h

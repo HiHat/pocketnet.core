@@ -2,6 +2,7 @@
 #define POCKETCOIN_EVENTLOOP_H
 
 #include <util/system.h>
+#include <util/threadnames.h>
 #include <logging.h>
 
 #include <functional>

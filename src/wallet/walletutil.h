@@ -5,7 +5,7 @@
 #ifndef POCKETCOIN_WALLET_WALLETUTIL_H
 #define POCKETCOIN_WALLET_WALLETUTIL_H
 
-#include <fs.h>
+#include <util/fs.h>
 #include <script/descriptor.h>
 
 #include <vector>

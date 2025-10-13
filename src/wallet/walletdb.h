@@ -6,7 +6,7 @@
 #ifndef POCKETCOIN_WALLET_WALLETDB_H
 #define POCKETCOIN_WALLET_WALLETDB_H
 
-#include <amount.h>
+#include <consensus/amount.h>
 #include <script/sign.h>
 #include <wallet/bdb.h>
 #include <wallet/db.h>

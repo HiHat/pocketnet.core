@@ -4,7 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <logging.h>
-#include <fs.h>
+#include <util/fs.h>
 #include <util/string.h>
 #include <util/threadnames.h>
 #include <util/time.h>
@@ -300,7 +300,7 @@ std::string BCLog::Logger::LogTimestampStr(const std::string& str)
             strStamped.pop_back();
             strStamped += strprintf(".%06dZ", nTimeMicros%1000000);
         }
-        int64_t mocktime = GetMockTime();
+        int64_t mocktime = GetMockTime().count();
         if (mocktime > 0) {
             strStamped += " (mocktime: " + FormatISO8601DateTime(mocktime) + ")";
         }

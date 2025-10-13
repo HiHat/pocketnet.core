@@ -5,7 +5,7 @@
 #ifndef POCKETCOIN_QT_POCKETCOINUNITS_H
 #define POCKETCOIN_QT_POCKETCOINUNITS_H
 
-#include <amount.h>
+#include <consensus/amount.h>
 
 #include <QAbstractListModel>
 #include <QString>

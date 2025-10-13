@@ -31,8 +31,15 @@
 #include <util/system.h>
 #include <util/trace.h>
 #include <validation.h>
+
+#include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <future>
 #include <memory>
+#include <optional>
 #include <typeinfo>
+
 
 #include "pocketdb/services/Accessor.h"
 
@@ -868,7 +875,9 @@ void PeerManager::PushNodeVersion(CNode& pnode, int64_t nTime)
                            CAddress(CService(), addr.nServices);
     CAddress addrMe = CAddress(CService(), nLocalNodeServices);
 
-    m_connman.PushMessage(&pnode, CNetMsgMaker(INIT_PROTO_VERSION).Make(NetMsgType::VERSION, PROTOCOL_VERSION, (uint64_t)nLocalNodeServices, nTime, addrYou, addrMe,
+    m_connman.PushMessage(&pnode, CNetMsgMaker(INIT_PROTO_VERSION).Make(NetMsgType::VERSION, PROTOCOL_VERSION, (uint64_t)nLocalNodeServices, nTime,
+            WithParams(CNetAddr::V1, addr_you), // Together the pre-version-31402 serialization of CAddress "addrYou" (without nTime)
+            WithParams(CNetAddr::V1, addrMe), // Together the pre-version-31402 serialization of CAddress "addrMe" (without nTime)
             nonce, strSubVersion, nNodeStartingHeight, ::g_relay_txes && pnode.m_tx_relay != nullptr));
 
     if (fLogIPs) {
@@ -2586,7 +2595,7 @@ void PeerManager::ProcessMessage(CNode& pfrom, const std::string& msg_type, CDat
         int starting_height = -1;
         bool fRelay = true;
 
-        vRecv >> nVersion >> nServiceInt >> nTime >> addrMe;
+        vRecv >> nVersion >> nServiceInt >> nTime >> WithParams(CNetAddr::V1, addrMe);
         if (nTime < 0) {
             nTime = 0;
         }
@@ -2745,7 +2754,7 @@ void PeerManager::ProcessMessage(CNode& pfrom, const std::string& msg_type, CDat
             // table is also potentially detrimental because new-table entries
             // are subject to eviction in the event of addrman collisions.  We
             // mitigate the information-leak by never calling
-            // CAddrMan::Connected() on block-relay-only peers; see
+            // AddrMan::Connected() on block-relay-only peers; see
             // FinalizeNode().
             //
             // This moves an address from New to Tried table in Addrman,
@@ -2870,17 +2879,27 @@ void PeerManager::ProcessMessage(CNode& pfrom, const std::string& msg_type, CDat
     }
 
     if (msg_type == NetMsgType::ADDR || msg_type == NetMsgType::ADDRV2) {
+        /*
         int stream_version = vRecv.GetVersion();
         if (msg_type == NetMsgType::ADDRV2) {
+        */
             // Add ADDRV2_FORMAT to the version so that the CNetAddr and CAddress
+        const auto ser_params{
+            msg_type == NetMsgType::ADDRV2 ?
+            // Set V2 param so that the CNetAddr and CAddress
             // unserialize methods know that an address in v2 format is coming.
+        /*
             stream_version |= ADDRV2_FORMAT;
-        }
+        } */
+            CAddress::V2_NETWORK :
+            CAddress::V1_NETWORK,
+        };
 
-        OverrideStream<CDataStream> s(&vRecv, vRecv.GetType(), stream_version);
+//        OverrideStream<CDataStream> s(&vRecv, vRecv.GetType(), stream_version);
         std::vector<CAddress> vAddr;
 
-        s >> vAddr;
+//        s >> vAddr;
+        vRecv >> WithParams(ser_params, vAddr);
 
         if (!pfrom.RelayAddrsWithConn()) {
             return;
@@ -4393,10 +4412,12 @@ void PeerManager::EvictExtraOutboundPeers(int64_t time_in_seconds)
         // Pick the OUTBOUND_FULL_RELAY peer that least recently announced
         // us a new block, with ties broken by choosing the more recent
         // connection (higher node id)
+        // Protect peers from eviction if we don't have another connection
+        // to their network, counting both outbound-full-relay and manual peers.
         NodeId worst_peer = -1;
         int64_t oldest_block_announcement = std::numeric_limits<int64_t>::max();
 
-        m_connman.ForEachNode([&](CNode* pnode) EXCLUSIVE_LOCKS_REQUIRED(::cs_main) {
+        m_connman.ForEachNode([&](CNode* pnode) EXCLUSIVE_LOCKS_REQUIRED(::cs_main, m_connman.GetNodesMutex()) {
             AssertLockHeld(::cs_main);
 
             // Only consider OUTBOUND_FULL_RELAY peers that are not already
@@ -4406,6 +4427,9 @@ void PeerManager::EvictExtraOutboundPeers(int64_t time_in_seconds)
             if (state == nullptr) return; // shouldn't be possible, but just in case
             // Don't evict our protected peers
             if (state->m_chain_sync.m_protect) return;
+            // If this is the only connection on a particular network that is
+            // OUTBOUND_FULL_RELAY or MANUAL, protect it.
+            if (!m_connman.MultipleManualOrFullOutboundConns(pnode->addr.GetNetwork())) return;
             if (state->m_last_block_announcement < oldest_block_announcement || (state->m_last_block_announcement == oldest_block_announcement && pnode->GetId() > worst_peer)) {
                 worst_peer = pnode->GetId();
                 oldest_block_announcement = state->m_last_block_announcement;
@@ -4580,13 +4604,16 @@ bool PeerManager::SendMessages(CNode* pto)
             assert(pto->m_addr_known);
 
             const char* msg_type;
-            int make_flags;
+//            int make_flags;
+            CNetAddr::Encoding ser_enc;
             if (pto->m_wants_addrv2) {
                 msg_type = NetMsgType::ADDRV2;
-                make_flags = ADDRV2_FORMAT;
+//                make_flags = ADDRV2_FORMAT;
+                ser_enc = CNetAddr::Encoding::V2;
             } else {
                 msg_type = NetMsgType::ADDR;
-                make_flags = 0;
+//                make_flags = 0;
+                ser_enc = CNetAddr::Encoding::V1;
             }
 
             for (const CAddress& addr : pto->vAddrToSend)
@@ -4598,7 +4625,8 @@ bool PeerManager::SendMessages(CNode* pto)
                     // receiver rejects addr messages larger than MAX_ADDR_TO_SEND
                     if (vAddr.size() >= MAX_ADDR_TO_SEND)
                     {
-                        m_connman.PushMessage(pto, msgMaker.Make(make_flags, msg_type, vAddr));
+//                        m_connman.PushMessage(pto, msgMaker.Make(make_flags, msg_type, vAddr));
+                        m_connman.PushMessage(pto, msgMaker.Make(msg_type, WithParams(CAddress::SerParams{{ser_enc}, CAddress::Format::Network}, vAddr));
                         vAddr.clear();
                     }
                 }

@@ -5,7 +5,7 @@
 #ifndef POCKETCOIN_TEST_FUZZ_UTIL_H
 #define POCKETCOIN_TEST_FUZZ_UTIL_H
 
-#include <amount.h>
+#include <consensus/amount.h>
 #include <arith_uint256.h>
 #include <attributes.h>
 #include <chainparamsbase.h>
@@ -455,7 +455,7 @@ void WriteToStream(FuzzedDataProvider& fuzzed_data_provider, Stream& stream) noe
 {
     while (fuzzed_data_provider.ConsumeBool()) {
         try {
-            switch (fuzzed_data_provider.ConsumeIntegralInRange<int>(0, 13)) {
+            switch (fuzzed_data_provider.ConsumeIntegralInRange<int>(0, 11)) {
                 WRITE_TO_STREAM_CASE(0, bool, fuzzed_data_provider.ConsumeBool())
                 WRITE_TO_STREAM_CASE(1, char, fuzzed_data_provider.ConsumeIntegral<char>())
                 WRITE_TO_STREAM_CASE(2, int8_t, fuzzed_data_provider.ConsumeIntegral<int8_t>())
@@ -466,10 +466,8 @@ void WriteToStream(FuzzedDataProvider& fuzzed_data_provider, Stream& stream) noe
                 WRITE_TO_STREAM_CASE(7, uint32_t, fuzzed_data_provider.ConsumeIntegral<uint32_t>())
                 WRITE_TO_STREAM_CASE(8, int64_t, fuzzed_data_provider.ConsumeIntegral<int64_t>())
                 WRITE_TO_STREAM_CASE(9, uint64_t, fuzzed_data_provider.ConsumeIntegral<uint64_t>())
-                WRITE_TO_STREAM_CASE(10, float, fuzzed_data_provider.ConsumeFloatingPoint<float>())
-                WRITE_TO_STREAM_CASE(11, double, fuzzed_data_provider.ConsumeFloatingPoint<double>())
-                WRITE_TO_STREAM_CASE(12, std::string, fuzzed_data_provider.ConsumeRandomLengthString(32))
-                WRITE_TO_STREAM_CASE(13, std::vector<char>, ConsumeRandomLengthIntegralVector<char>(fuzzed_data_provider))
+                WRITE_TO_STREAM_CASE(10, std::string, fuzzed_data_provider.ConsumeRandomLengthString(32))
+                WRITE_TO_STREAM_CASE(11, std::vector<char>, ConsumeRandomLengthIntegralVector<char>(fuzzed_data_provider))
             }
         } catch (const std::ios_base::failure&) {
             break;
@@ -488,7 +486,7 @@ void ReadFromStream(FuzzedDataProvider& fuzzed_data_provider, Stream& stream) no
 {
     while (fuzzed_data_provider.ConsumeBool()) {
         try {
-            switch (fuzzed_data_provider.ConsumeIntegralInRange<int>(0, 13)) {
+            switch (fuzzed_data_provider.ConsumeIntegralInRange<int>(0, 11)) {
                 READ_FROM_STREAM_CASE(0, bool)
                 READ_FROM_STREAM_CASE(1, char)
                 READ_FROM_STREAM_CASE(2, int8_t)
@@ -499,10 +497,8 @@ void ReadFromStream(FuzzedDataProvider& fuzzed_data_provider, Stream& stream) no
                 READ_FROM_STREAM_CASE(7, uint32_t)
                 READ_FROM_STREAM_CASE(8, int64_t)
                 READ_FROM_STREAM_CASE(9, uint64_t)
-                READ_FROM_STREAM_CASE(10, float)
-                READ_FROM_STREAM_CASE(11, double)
-                READ_FROM_STREAM_CASE(12, std::string)
-                READ_FROM_STREAM_CASE(13, std::vector<char>)
+                READ_FROM_STREAM_CASE(10, std::string)
+                READ_FROM_STREAM_CASE(11, std::vector<char>)
             }
         } catch (const std::ios_base::failure&) {
             break;

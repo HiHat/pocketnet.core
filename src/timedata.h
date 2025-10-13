@@ -2,12 +2,15 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef POCKETCOIN_TIMEDATA_H
-#define POCKETCOIN_TIMEDATA_H
+#ifndef BITCOIN_TIMEDATA_H
+#define BITCOIN_TIMEDATA_H
+
+#include <util/time.h>
 
 #include <algorithm>
-#include <assert.h>
-#include <stdint.h>
+#include <cassert>
+#include <chrono>
+#include <cstdint>
 #include <vector>
 
 static const int64_t DEFAULT_MAX_TIME_ADJUSTMENT = 70 * 60;
@@ -72,7 +75,13 @@ public:
 
 /** Functions to keep track of adjusted P2P time */
 int64_t GetTimeOffset();
+//NodeClock::time_point GetAdjustedTime();
 int64_t GetAdjustedTime();
 void AddTimeData(const CNetAddr& ip, int64_t nTime);
 
-#endif // POCKETCOIN_TIMEDATA_H
+/**
+ * Reset the internal state of GetTimeOffset(), GetAdjustedTime() and AddTimeData().
+ */
+void TestOnlyResetTimeData();
+
+#endif // BITCOIN_TIMEDATA_H

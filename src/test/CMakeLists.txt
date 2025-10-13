@@ -110,7 +110,7 @@ add_executable(test_pocketcoin
   script_standard_tests.cpp
   script_tests.cpp
   scriptnum_tests.cpp
-#  serfloat_tests.cpp
+  serfloat_tests.cpp
   serialize_tests.cpp
   settings_tests.cpp
   sighash_tests.cpp

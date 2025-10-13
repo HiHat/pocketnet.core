@@ -3,7 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <util/system.h>
-#include <compat.h>
+#include <compat/compat.h>
 #include <test/util/setup_common.h>
 #include <util/sock.h>
 #include <threadinterrupt.h>

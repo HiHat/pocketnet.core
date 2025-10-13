@@ -175,7 +175,7 @@ void test_one_input(const std::vector<uint8_t>& buffer)
         bool mutated;
         BlockMerkleRoot(block, &mutated);
 #elif ADDRMAN_DESERIALIZE
-        CAddrMan am;
+        AddrMan am;
         DeserializeFromFuzzingInput(buffer, am);
 #elif BLOCKHEADER_DESERIALIZE
         CBlockHeader bh;

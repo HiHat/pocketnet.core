@@ -285,6 +285,7 @@ POCKETCOIN_TESTS =\
   test/script_tests.cpp \
   test/script_standard_tests.cpp \
   test/scriptnum_tests.cpp \
+  test/serfloat_tests.cpp \
   test/serialize_tests.cpp \
   test/settings_tests.cpp \
   test/sigopcount_tests.cpp \
@@ -297,6 +298,7 @@ POCKETCOIN_TESTS =\
   test/timedata_tests.cpp \
   test/torcontrol_tests.cpp \
   test/transaction_tests.cpp \
+  test/translation_tests.cpp \
   test/txvalidation_tests.cpp \
   test/txvalidationcache_tests.cpp \
   test/uint256_tests.cpp \

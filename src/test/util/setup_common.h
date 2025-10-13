@@ -6,7 +6,6 @@
 #define POCKETCOIN_TEST_UTIL_SETUP_COMMON_H
 
 #include <chainparamsbase.h>
-#include <fs.h>
 #include <key.h>
 #include <node/context.h>
 #include <pubkey.h>
@@ -14,6 +13,7 @@
 #include <stdexcept>
 #include <txmempool.h>
 #include <util/check.h>
+#include <util/fs.h>
 #include <util/string.h>
 
 #include <type_traits>
