@@ -476,7 +476,7 @@ namespace PocketDb
                                 cross join Chain cc indexed by Chain_TxId_Height on
                                     cc.TxId = c.RowId and cc.Height <= ? and cc.Height > ?
                                 where
-                                    p.Type in (200,201,202,209,210) and
+                                    p.Type in (200, 201, 202, 209, 210, 221) and
                                     p.RegId1 = addr.id
                                 group by c.RegId1
                                 having count() > ?
@@ -769,7 +769,7 @@ namespace PocketDb
                     join Last lf
                         on lf.TxId = f.RowId
                     where
-                        f.Type in (200,201,202,209,210,220,207) and f.RegId1 = addr.id
+                        f.Type in (200, 201, 202, 209, 210, 220, 221, 207) and f.RegId1 = addr.id
                     group by
                         f.Type
                 )gr
@@ -1070,7 +1070,7 @@ namespace PocketDb
                     -- Content
                     cross join
                         Transactions p indexed by Transactions_Type_RegId2_RegId1 on
-                            p.Type in (200, 201, 202, 209, 210) and p.RegId2 = t.RegId3
+                            p.Type in (200, 201, 202, 209, 210, 221) and p.RegId2 = t.RegId3
                     cross join
                         Last lp
                             on lp.TxId = p.RowId
@@ -1826,7 +1826,7 @@ namespace PocketDb
                             on pl.TxId = c.RowId
                     cross join
                         Transactions t indexed by Transactions_Type_RegId2_RegId1
-                            on t.Type in (200, 201, 202, 209, 210) and t.RegId2 = c.RegId3
+                            on t.Type in (200, 201, 202, 209, 210, 221) and t.RegId2 = c.RegId3
                     cross join
                         Last lt
                             on lt.TxId = t.RowId
@@ -2254,7 +2254,7 @@ namespace PocketDb
                                 addr
                             cross join
                                 Transactions c indexed by Transactions_Type_RegId1_RegId2_RegId3 on
-                                    c.Type in (200, 201, 202, 204, 209, 210) and c.RegId1 = addr.id
+                                    c.Type in (200, 201, 202, 204, 209, 210, 221) and c.RegId1 = addr.id
                             cross join
                                 First fc on
                                     fc.TxId = c.RowId
@@ -2652,7 +2652,7 @@ namespace PocketDb
 
     // TODO (aok, api): implement
     vector<string> WebRpcRepository::GetTopAccounts(int topHeight, int countOut, const string& lang,
-        const vector<string>& tags, const vector<int>& contentTypes,
+        const vector<string>& tags, const vector<string>& requiredTags, const vector<int>& contentTypes,
         const vector<string>& addrsExcluded, const vector<string>& tagsExcluded, int depth,
         int badReputationLimit)
     {
@@ -2709,6 +2709,21 @@ namespace PocketDb
             )sql";
         }
 
+        if (!requiredTags.empty())
+        {
+            sql += R"sql(
+                and t.id in (
+                    select tm.ContentId
+                    from web.TagsMap tm indexed by TagsMap_TagId_ContentId
+                    join web.Tags tag on tag.Id = tm.TagId
+                    where tag.Value in ( )sql" + join(vector<string>(requiredTags.size(), "?"), ",") + R"sql( )
+                        )sql" + (!lang.empty() ? " and tag.Lang = ? " : "") + R"sql(
+                    group by tm.ContentId
+                    having count(distinct tag.Value) = )sql" + to_string(requiredTags.size()) + R"sql(
+                )
+            )sql";
+        }
+
         if (!addrsExcluded.empty()) sql += " and t.String1 not in ( " + join(vector<string>(addrsExcluded.size(), "?"), ",") + " ) ";
         if (!tagsExcluded.empty())
         {
@@ -2740,6 +2755,14 @@ namespace PocketDb
                 if (!tags.empty())
                 {
                     stmt.Bind(tags);
+
+                    if (!lang.empty())
+                        stmt.Bind(lang);
+                }
+
+                if (!requiredTags.empty())
+                {
+                    stmt.Bind(requiredTags);
 
                     if (!lang.empty())
                         stmt.Bind(lang);
@@ -3114,7 +3137,7 @@ namespace PocketDb
                     from
                         Chain cc indexed by Chain_Height_Uid
                     cross join Transactions c
-                            on c.RowId = cc.TxId and c.Type in (200, 201, 202, 209, 210)
+                            on c.RowId = cc.TxId and c.Type in (200, 201, 202, 209, 210, 221)
                     cross join
                         Last lc
                             on lc.TxId = c.RowId
@@ -3178,7 +3201,7 @@ namespace PocketDb
                         addr
                     cross join
                         Transactions t indexed by Transactions_Type_RegId1_RegId2_RegId3
-                            on t.Type in (200, 201, 202, 209, 210) and t.RegId1 = addr.id
+                            on t.Type in (200, 201, 202, 209, 210, 221) and t.RegId1 = addr.id
                     cross join
                         Last l
                             on l.TxId = t.RowId
@@ -3227,7 +3250,7 @@ namespace PocketDb
                             addr
                         cross join
                             Transactions t
-                                on t.Type in (200, 201, 202, 209, 210) and t.RegId1 = addr.id
+                                on t.Type in (200, 201, 202, 209, 210, 221) and t.RegId1 = addr.id
                         cross join
                             Last lt
                                 on lt.TxId = t.RowId
@@ -3334,7 +3357,7 @@ namespace PocketDb
                         addr
                     cross join
                         Transactions t indexed by Transactions_Type_RegId1_RegId2_RegId3
-                            on t.Type in (200, 201, 202, 209, 210) and t.RegId1 = addr.id
+                            on t.Type in (200, 201, 202, 209, 210, 221) and t.RegId1 = addr.id
                     cross join
                         Last lt
                             on lt.TxId = t.RowId
@@ -3421,7 +3444,7 @@ namespace PocketDb
                             on c.Height > height.value
                     cross join
                         Transactions r
-                            on r.RowId = c.TxId and r.Type in (200, 201, 202, 209, 210) and r.RegId3 is not null
+                            on r.RowId = c.TxId and r.Type in (200, 201, 202, 209, 210, 221) and r.RegId3 is not null
                     cross join
                         Last l
                             on l.TxId = r.RowId
@@ -3483,7 +3506,7 @@ namespace PocketDb
                         height
                     cross join
                         Transactions c indexed by Transactions_Type_RegId1_RegId2_RegId3
-                            on c.Type in (200, 201, 202, 209, 210) and c.RegId1 = addr.id
+                            on c.Type in (200, 201, 202, 209, 210, 221) and c.RegId1 = addr.id
                     cross join
                         Last lc
                             on lc.TxId = c.RowId
@@ -3785,7 +3808,7 @@ namespace PocketDb
                         height
                     cross join
                         Transactions p indexed by Transactions_Type_RegId1_RegId2_RegId3 on
-                            p.Type in (200, 201, 202, 209, 210) and
+                            p.Type in (200, 201, 202, 209, 210, 221) and
                             p.RegId1 = addr.id
                     cross join
                         Last lp
@@ -3987,7 +4010,7 @@ namespace PocketDb
                             on cb.TxId = tBoost.RowId and cb.Height > Height.value
                     cross join
                         Transactions tContent indexed by Transactions_Type_RegId2_RegId1
-                            on tContent.Type in (200, 201, 202, 209, 210) and tContent.RegId2 = tBoost.RegId2 and tContent.RegId1 = addr.id
+                            on tContent.Type in (200, 201, 202, 209, 210, 221) and tContent.RegId2 = tBoost.RegId2 and tContent.RegId1 = addr.id
                     cross join
                         Transactions u indexed by Transactions_Type_RegId1_RegId2_RegId3
                             on  u.Type in (100) and u.RegId1 = tBoost.RegId1
@@ -4181,7 +4204,7 @@ namespace PocketDb
                     with
                         lang as ( select ? as value)
                     select
-                        ct.Uid
+                        max(ct.Uid)
                     from
                         lang
                     cross join
@@ -4239,8 +4262,10 @@ namespace PocketDb
                         and jb.AccountId is null
                         -- Do not show posts from users with active jury
                         and jjv.AccountId is null
+                    group by
+                        t.RegId1
                     order by
-                        r.Value desc
+                        sum(r.Value) desc
                     limit ?
                 )sql")
                 .Bind(
@@ -4394,7 +4419,7 @@ namespace PocketDb
                             join Last lrep
                                 on lrep.TxId = rep.RowId
                             where
-                                rep.Type in (200, 201, 202, 209, 210) and
+                                rep.Type in (200, 201, 202, 209, 210, 221) and
                                 rep.RegId3 = t.RegId2
                         ) as Reposted,
                         (
@@ -4458,7 +4483,7 @@ namespace PocketDb
                         addr
                     cross join
                         Transactions t indexed by Transactions_Type_RegId2_RegId1 on
-                            t.Type in (200,201,202,209,210,221,211,212,220,207) and
+                            t.Type in (200, 201, 202, 209, 210, 221, 211, 212, 220, 207) and
                             t.RegId2 = txs.id
                     cross join
                         Chain c on
@@ -4681,7 +4706,7 @@ namespace PocketDb
     }
 
     UniValue WebRpcRepository::GetTopFeed(int countOut, const int64_t& topContentId, int topHeight,
-        const string& lang, const vector<string>& tagsIncluded, const vector<int>& contentTypes,
+        const string& lang, const vector<string>& tagsIncluded, const vector<string>& requiredTagsIncluded, const vector<int>& contentTypes,
         const vector<string>& txidsExcluded, const vector<string>& addrsExcluded, const vector<string>& tagsExcluded,
         const string& address, int depth, int badReputationLimit)
     {
@@ -4716,6 +4741,31 @@ namespace PocketDb
                     where
                         tag.Value in ( )sql" + join(vector<string>(tagsIncluded.size(), "?"), ",") + R"sql( ) and
                         ( ? or tag.Lang = ? )
+                )
+            )sql";
+        }
+
+        // ---------------------------------------------------
+
+        string requiredTagsIncludedSql = "";
+        if (!requiredTagsIncluded.empty())
+        {
+            requiredTagsIncludedSql = R"sql(
+                and t.RowId in (
+                    select
+                        tm.ContentId
+                    from
+                        web.TagsMap tm indexed by TagsMap_TagId_ContentId
+                    join
+                        web.Tags tag indexed by Tags_Lang_Value_Id on
+                            tag.Id = tm.TagId
+                    where
+                        tag.Value in ( )sql" + join(vector<string>(requiredTagsIncluded.size(), "?"), ",") + R"sql( ) and
+                        ( ? or tag.Lang = ? )
+                    group by
+                        tm.ContentId
+                    having
+                        count(distinct tag.Value) = )sql" + to_string(requiredTagsIncluded.size()) + R"sql(
                 )
             )sql";
         }
@@ -4845,6 +4895,8 @@ namespace PocketDb
 
                 )sql" + tagsIncludedSql + R"sql(
 
+                )sql" + requiredTagsIncludedSql + R"sql(
+
                 )sql" + tagsExcludedSql + R"sql(
 
             order by
@@ -4892,6 +4944,15 @@ namespace PocketDb
                     );
                 }
 
+                if (!requiredTagsIncluded.empty())
+                {
+                    stmt.Bind(
+                        requiredTagsIncluded,
+                        lang.empty(),
+                        lang
+                    );
+                }
+
                 if (!tagsExcluded.empty())
                 {
                     stmt.Bind(
@@ -4930,7 +4991,7 @@ namespace PocketDb
     }
 
     UniValue WebRpcRepository::GetMostCommentedFeed(int countOut, const int64_t& topContentId, int topHeight,
-        const string& lang, const vector<string>& tagsIncluded, const vector<int>& contentTypes,
+        const string& lang, const vector<string>& tagsIncluded, const vector<string>& requiredTagsIncluded, const vector<int>& contentTypes,
         const vector<string>& txidsExcluded, const vector<string>& addrsExcluded, const vector<string>& tagsExcluded,
         const string& address, int depth, int badReputationLimit)
     {
@@ -4965,6 +5026,31 @@ namespace PocketDb
                     where
                         tag.Value in ( )sql" + join(vector<string>(tagsIncluded.size(), "?"), ",") + R"sql( ) and
                         ( ? or tag.Lang = ? )
+                )
+            )sql";
+        }
+
+        // ---------------------------------------------------
+
+        string requiredTagsIncludedSql = "";
+        if (!requiredTagsIncluded.empty())
+        {
+            requiredTagsIncludedSql = R"sql(
+                and t.RowId in (
+                    select
+                        tm.ContentId
+                    from
+                        web.TagsMap tm indexed by TagsMap_TagId_ContentId
+                    join
+                        web.Tags tag indexed by Tags_Lang_Value_Id on
+                            tag.Id = tm.TagId
+                    where
+                        tag.Value in ( )sql" + join(vector<string>(requiredTagsIncluded.size(), "?"), ",") + R"sql( ) and
+                        ( ? or tag.Lang = ? )
+                    group by
+                        tm.ContentId
+                    having
+                        count(distinct tag.Value) = )sql" + to_string(requiredTagsIncluded.size()) + R"sql(
                 )
             )sql";
         }
@@ -5084,6 +5170,8 @@ namespace PocketDb
 
                 )sql" + tagsIncludedSql + R"sql(
 
+                )sql" + requiredTagsIncludedSql + R"sql(
+
                 )sql" + tagsExcludedSql + R"sql(
 
             order by (
@@ -5144,6 +5232,15 @@ namespace PocketDb
                     );
                 }
 
+                if (!requiredTagsIncluded.empty())
+                {
+                    stmt.Bind(
+                        requiredTagsIncluded,
+                        lang.empty(),
+                        lang
+                    );
+                }
+
                 if (!tagsExcluded.empty())
                 {
                     stmt.Bind(
@@ -5182,7 +5279,7 @@ namespace PocketDb
     }
 
     UniValue WebRpcRepository::GetProfileFeed(const string& addressFeed, int countOut, int pageNumber, const int64_t& topContentId, int topHeight,
-        const string& lang, const vector<string>& tagsIncluded, const vector<int>& contentTypes, const vector<string>& txidsExcluded, 
+        const string& lang, const vector<string>& tagsIncluded, const vector<string>& requiredTagsIncluded, const vector<int>& contentTypes, const vector<string>& txidsExcluded, 
         const vector<string>& addrsExcluded, const vector<string>& tagsExcluded, const string& address, const string& orderby, const string& ascdesc)
     {
         UniValue result(UniValue::VARR);
@@ -5227,11 +5324,36 @@ namespace PocketDb
         }
         sorting += " " + ascdesc;
 
+        // ---------------------------------------------------
+        // Required tags included SQL
+        string requiredTagsIncludedSql = "";
+        if (!requiredTagsIncluded.empty())
+        {
+            requiredTagsIncludedSql = R"sql(
+                and t.RowId in (
+                    select
+                        tm.ContentId
+                    from
+                        web.TagsMap tm indexed by TagsMap_TagId_ContentId
+                    join
+                        web.Tags tag indexed by Tags_Lang_Value_Id on
+                            tag.Id = tm.TagId
+                    where
+                        tag.Value in ( )sql" + join(vector<string>(requiredTagsIncluded.size(), "?"), ",") + R"sql( ) and
+                        ( ? or tag.Lang = ? )
+                    group by
+                        tm.ContentId
+                    having
+                        count(distinct tag.Value) = )sql" + to_string(requiredTagsIncluded.size()) + R"sql(
+                )
+            )sql";
+        }
+
         vector<int64_t> ids;
         SqlTransaction(
             __func__,
             [&]() -> Stmt& {
-                return Sql(R"sql(
+                auto& stmt = Sql(R"sql(
                     with
                         height as ( select ? as value ),
                         addr as ( select RowId as id, String as hash from Registry where String = ?),
@@ -5262,7 +5384,7 @@ namespace PocketDb
                             ( ? or p.String1 = lang.value )
                     left join
                         web.TagsMap tm on
-                            tm.ContentId = ct.Uid
+                            tm.ContentId = t.RowId
                     left join
                         web.Tags tg on
                             tg.Id = tm.TagId
@@ -5280,12 +5402,13 @@ namespace PocketDb
                                 where
                                     r.String in ( )sql" + join(vector<string>(txidsExcluded.size(), "?"), ",") + R"sql( )
                             )
-                        )
+                        ))sql" + requiredTagsIncludedSql + R"sql(
                     order by )sql" + sorting + R"sql(
                     limit ?
                     offset ?
-                )sql")
-                .Bind(
+                )sql");
+
+                stmt.Bind(
                     topHeight,
                     addressFeed,
                     lang,
@@ -5299,10 +5422,24 @@ namespace PocketDb
                     tagsExcluded.empty(),
                     tagsExcluded,
                     txidsExcluded.empty(),
-                    txidsExcluded,
+                    txidsExcluded
+                );
+
+                if (!requiredTagsIncluded.empty())
+                {
+                    stmt.Bind(
+                        requiredTagsIncluded,
+                        lang.empty(),
+                        lang
+                    );
+                }
+
+                stmt.Bind(
                     countOut,
                     pageNumber * countOut
                 );
+
+                return stmt;
             },
             [&] (Stmt& stmt) {
                 stmt.Select([&](Cursor& cursor) {
@@ -5326,7 +5463,7 @@ namespace PocketDb
     }
 
     UniValue WebRpcRepository::GetSubscribesFeed(const string& addressFeed, int countOut, const int64_t& topContentId, int topHeight,
-        const string& lang, const vector<string>& tagsIncluded, const vector<int>& contentTypes,
+        const string& lang, const vector<string>& tagsIncluded, const vector<string>& requiredTagsIncluded, const vector<int>& contentTypes,
         const vector<string>& txidsExcluded, const vector<string>& addrsExcluded, const vector<string>& tagsExcluded,
         const string& address, const vector<string>& addresses_extended)
     {
@@ -5411,6 +5548,31 @@ namespace PocketDb
                     where
                         tag.Value in ( )sql" + join(vector<string>(tagsIncluded.size(), "?"), ",") + R"sql( ) and
                         ( ? or tag.Lang = ? )
+                )
+            )sql";
+        }
+
+        // ---------------------------------------------------
+
+        string requiredTagsIncludedSql = "";
+        if (!requiredTagsIncluded.empty())
+        {
+            requiredTagsIncludedSql = R"sql(
+                and t.RowId in (
+                    select
+                        tm.ContentId
+                    from
+                        web.Tags tag indexed by Tags_Lang_Value_Id
+                    join
+                        web.TagsMap tm indexed by TagsMap_TagId_ContentId on
+                            tm.TagId = tag.Id
+                    where
+                        tag.Value in ( )sql" + join(vector<string>(requiredTagsIncluded.size(), "?"), ",") + R"sql( ) and
+                        ( ? or tag.Lang = ? )
+                    group by
+                        tm.ContentId
+                    having
+                        count(distinct tag.Value) = ?
                 )
             )sql";
         }
@@ -5533,6 +5695,8 @@ namespace PocketDb
 
                 )sql" + tagsIncludedSql + R"sql(
 
+                )sql" + requiredTagsIncludedSql + R"sql(
+
                 )sql" + tagsExcludedSql + R"sql(
 
             limit ?
@@ -5577,6 +5741,16 @@ namespace PocketDb
                     );
                 }
 
+                if (!requiredTagsIncluded.empty())
+                {
+                    stmt.Bind(
+                        requiredTagsIncluded,
+                        lang.empty(),
+                        lang,
+                        (int)requiredTagsIncluded.size()
+                    );
+                }
+
                 if (!tagsExcluded.empty())
                 {
                     stmt.Bind(
@@ -5615,7 +5789,7 @@ namespace PocketDb
     }
 
     UniValue WebRpcRepository::GetHistoricalFeed(int countOut, const int64_t& topContentId, int topHeight,
-        const string& lang, const vector<string>& tagsIncluded, const vector<int>& contentTypes,
+        const string& lang, const vector<string>& tagsIncluded, const vector<string>& requiredTagsIncluded, const vector<int>& contentTypes,
         const vector<string>& txidsExcluded, const vector<string>& addrsExcluded, const vector<string>& tagsExcluded,
         const string& address, int badReputationLimit)
     {
@@ -5647,6 +5821,29 @@ namespace PocketDb
                     where
                         tag.Value in ( )sql" + join(vector<string>(tagsIncluded.size(), "?"), ",") + R"sql( ) and
                         ( ? or tag.Lang = ? )
+                )
+            )sql";
+        }
+
+        string requiredTagsIncludedSql = "";
+        if (!requiredTagsIncluded.empty())
+        {
+            requiredTagsIncludedSql = R"sql(
+                and t.RowId in (
+                    select
+                        tm.ContentId
+                    from
+                        web.TagsMap tm indexed by TagsMap_TagId_ContentId
+                    join
+                        web.Tags tag indexed by Tags_Lang_Value_Id on
+                            tag.Id = tm.TagId
+                    where
+                        tag.Value in ( )sql" + join(vector<string>(requiredTagsIncluded.size(), "?"), ",") + R"sql( ) and
+                        ( ? or tag.Lang = ? )
+                    group by
+                        tm.ContentId
+                    having
+                        count(distinct tag.Value) = )sql" + to_string(requiredTagsIncluded.size()) + R"sql(
                 )
             )sql";
         }
@@ -5779,6 +5976,8 @@ namespace PocketDb
 
                 )sql" + tagsIncludedSql + R"sql(
 
+                )sql" + requiredTagsIncludedSql + R"sql(
+
                 )sql" + tagsExcludedSql + R"sql(
 
             limit ?
@@ -5823,6 +6022,15 @@ namespace PocketDb
                     );
                 }
 
+                if (!requiredTagsIncluded.empty())
+                {
+                    stmt.Bind(
+                        requiredTagsIncluded,
+                        lang.empty(),
+                        lang
+                    );
+                }
+
                 if (!tagsExcluded.empty())
                 {
                     stmt.Bind(
@@ -5860,7 +6068,7 @@ namespace PocketDb
     }
 
     UniValue WebRpcRepository::GetHierarchicalFeed(int countOut, const int64_t& topContentId, int topHeight,
-        const string& lang, const vector<string>& tagsIncluded, const vector<int>& contentTypes,
+        const string& lang, const vector<string>& tagsIncluded, const vector<string>& requiredTagsIncluded, const vector<int>& contentTypes,
         const vector<string>& txidsExcluded, const vector<string>& addrsExcluded, const vector<string>& tagsExcluded,
         const string& address, int badReputationLimit)
     {
@@ -5881,6 +6089,29 @@ namespace PocketDb
                     where
                         tag.Value in ( )sql" + join(vector<string>(tagsIncluded.size(), "?"), ",") + R"sql( ) and
                         ( ? or tag.Lang = ? )
+                )
+            )sql";
+        }
+
+        string requiredTagsIncludedSql = "";
+        if (!requiredTagsIncluded.empty())
+        {
+            requiredTagsIncludedSql = R"sql(
+                and t.RowId in (
+                    select
+                        tm.ContentId
+                    from
+                        web.TagsMap tm indexed by TagsMap_TagId_ContentId
+                    join
+                        web.Tags tag indexed by Tags_Lang_Value_Id on
+                            tag.Id = tm.TagId
+                    where
+                        tag.Value in ( )sql" + join(vector<string>(requiredTagsIncluded.size(), "?"), ",") + R"sql( ) and
+                        ( ? or tag.Lang = ? )
+                    group by
+                        tm.ContentId
+                    having
+                        count(distinct tag.Value) = )sql" + to_string(requiredTagsIncluded.size()) + R"sql(
                 )
             )sql";
         }
@@ -6012,6 +6243,8 @@ namespace PocketDb
 
                 )sql" + tagsIncludedSql + R"sql(
 
+                )sql" + requiredTagsIncludedSql + R"sql(
+
                 )sql" + tagsExcludedSql + R"sql(
         )sql";
 
@@ -6041,6 +6274,15 @@ namespace PocketDb
                 {
                     stmt.Bind(
                         tagsIncluded,
+                        lang.empty(),
+                        lang
+                    );
+                }
+
+                if (!requiredTagsIncluded.empty())
+                {
+                    stmt.Bind(
+                        requiredTagsIncluded,
                         lang.empty(),
                         lang
                     );
@@ -6154,7 +6396,7 @@ namespace PocketDb
         int lack = countOut - (int)resultIds.size();
         if (lack > 0)
         {
-            UniValue histContents = GetHistoricalFeed(lack, minPostRank, topHeight, lang, tagsIncluded, contentTypes,
+            UniValue histContents = GetHistoricalFeed(lack, minPostRank, topHeight, lang, tagsIncluded, requiredTagsIncluded, contentTypes,
                 txidsExcluded, addrsExcluded, tagsExcluded, address, badReputationLimit);
 
             result.push_backV(histContents.getValues());
@@ -6165,7 +6407,7 @@ namespace PocketDb
     }
 
     UniValue WebRpcRepository::GetBoostFeed(int topHeight, int countOut,
-        const string& lang, const vector<string>& tags, const vector<int>& contentTypes,
+        const string& lang, const vector<string>& tags, const vector<string>& requiredTags, const vector<int>& contentTypes,
         const vector<string>& txidsExcluded, const vector<string>& addrsExcluded, const vector<string>& tagsExcluded,
         int badReputationLimit)
     {
@@ -6390,7 +6632,7 @@ namespace PocketDb
     }
 
     UniValue WebRpcRepository::GetProfileCollections(const string& addressFeed, int countOut, int pageNumber, const int64_t& topContentId, int topHeight,
-                                   const string& lang, const vector<string>& tagsIncluded, const vector<int>& contentTypes,
+                                   const string& lang, const vector<string>& tagsIncluded, const vector<string>& requiredTags, const vector<int>& contentTypes,
                                    const vector<string>& txidsExcluded, const vector<string>& addrsExcluded, const vector<string>& tagsExcluded,
                                    const string& address, const string& keyword, const string& orderby, const string& ascdesc)
     {
@@ -6551,7 +6793,7 @@ namespace PocketDb
                                     _cc.TxId = _lc.TxId and
                                     _cc.Height <= height.value
                             where
-                                _c.Type in (200, 201, 202, 209, 210) and
+                                _c.Type in (200, 201, 202, 209, 210, 221) and
                                 _c.RegId1 = s.RegId1
                             order by
                                 _c.RowId desc
@@ -6586,7 +6828,7 @@ namespace PocketDb
                                     cc.TxId = lc.TxId and
                                     cc.Height <= height.value
                             where
-                                c.Type in (200, 201, 202, 209, 210) and
+                                c.Type in (200, 201, 202, 209, 210, 221) and
                                 c.RegId1 = s.RegId1
                         )
                         -- Do not show posts from users with low reputation
@@ -6650,7 +6892,7 @@ namespace PocketDb
                     cross join
                         Transactions t on
                             t.RowId = c.TxId and
-                            t.Type in (200, 201, 202, 209, 210)
+                            t.Type in (200, 201, 202, 209, 210, 221)
                     cross join
                         Last lt on
                             lt.TxId = t.RowId
@@ -6850,7 +7092,7 @@ namespace PocketDb
                                     lc.TxId = c.RowId
                             cross join
                                 Transactions p indexed by Transactions_Type_RegId2_RegId1 on
-                                    p.Type in (200,201,202,209,210) and
+                                    p.Type in (200, 201, 202, 209, 210, 221) and
                                     p.RegId2 = c.RegId3
                             cross join
                                 Last lp on
