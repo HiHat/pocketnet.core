@@ -1666,4 +1666,62 @@ namespace PocketWeb::PocketWebRpc
                           },
         };
     }
+
+    RPCHelpMan GetSubscribesChannels()
+    {
+        return RPCHelpMan{"getsubscribeschannels",
+                          "\nReturns subscriptions list with last content for each author (channel-style feed).\n",
+                          {
+                                  {"address", RPCArg::Type::STR, RPCArg::Optional::NO, "User address whose subscriptions to fetch"},
+                                  {"topHeight", RPCArg::Type::NUM, RPCArg::Optional::OMITTED_NAMED_ARG, "Top block height (default: current chain height)"},
+                                  {"pageStart", RPCArg::Type::NUM, RPCArg::Optional::OMITTED_NAMED_ARG, "Offset for pagination (default: 0)"},
+                                  {"pageSize", RPCArg::Type::NUM, RPCArg::Optional::OMITTED_NAMED_ARG, "Number of records (default: 20, max: 50)"},
+                                  {"contentTypes", RPCArg::Type::ARR, RPCArg::Optional::OMITTED_NAMED_ARG, "Content types filter (default: [200,201,202,209,210])",
+                                      {
+                                          {"contentType", RPCArg::Type::NUM, RPCArg::Optional::OMITTED_NAMED_ARG, "Content type code"},
+                                      }
+                                  }
+                          },
+                          {
+                              // TODO (rpc): provide return description
+                          },
+                          RPCExamples{
+                                  HelpExampleCli("getsubscribeschannels", "\"PktAddress\" 1000000 0 10") +
+                                  HelpExampleRpc("getsubscribeschannels", "\"PktAddress\", 1000000, 0, 10")
+                          },
+                          [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
+                          {
+                              if (request.params.empty())
+                                  throw JSONRPCError(RPC_INVALID_PARAMS, "address is required");
+
+                              string address = request.params[0].get_str();
+                              int topHeight = ChainActiveSafeHeight();
+                              if (request.params.size() > 1 && request.params[1].isNum() && request.params[1].get_int() > 0)
+                                  topHeight = request.params[1].get_int();
+                              int pageStart = 0;
+                              int pageSize = 20;
+                              vector<int> contentTypes;
+
+                              if (request.params.size() > 2 && request.params[2].isNum())
+                                  pageStart = request.params[2].get_int();
+
+                              if (request.params.size() > 3 && request.params[3].isNum())
+                                  pageSize = std::min(request.params[3].get_int(), 50);
+
+                              if (request.params.size() > 4)
+                                  ParseRequestContentTypes(request.params[4], contentTypes);
+
+                              if (contentTypes.empty())
+                                  contentTypes = {200, 201, 202, 209, 210};
+
+                              UniValue channels = request.DbConnection()->WebRpcRepoInst->GetSubscribesChannels(
+                                      address, topHeight, pageStart, pageSize, contentTypes);
+
+                              UniValue result(UniValue::VOBJ);
+                              result.pushKV("height", topHeight);
+                              result.pushKV("channels", channels);
+                              return result;
+                          },
+        };
+    }
 }
