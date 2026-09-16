@@ -70,6 +70,11 @@ endif()
 
 option(ENABLE_UPNP_DEFAULT "If UPNP is enabled, turn it on at startup (default is no)")
 
+option(WITH_USDT "Enable tracepoints for Userspace, Statically Defined Tracing." OFF)
+if(WITH_USDT)
+  find_package(USDT MODULE REQUIRED)
+endif()
+
 option(DISABLE_TESTS "Do not compile tests (default is to compile)" OFF)
 if (NOT DISABLE_TESTS)
     set(USE_TESTS ON)
@@ -237,7 +242,7 @@ endif ()
 # Common checks
 
 # AC_CHECK_HEADERS analog
-foreach(_HEADER endian.h sys/endian.h byteswap.h stdio.h stdint.h stdlib.h unistd.h string.h strings.h inttypes.h sys/types.h sys/stat.h sys/select.h sys/prctl.h sys/sysctl.h vm/vm_param.h sys/vmmeter.h sys/resources.h)
+foreach(_HEADER endian.h sys/endian.h byteswap.h stdio.h stdint.h stdlib.h unistd.h string.h strings.h inttypes.h sys/types.h sys/stat.h sys/select.h sys/prctl.h sys/sysctl.h vm/vm_param.h sys/vmmeter.h sys/resources.h dlfcn.h)
     check_include_file_cxx(${_HEADER} _RES_${_HEADER})
     if (_RES_${_HEADER})
         # Replace all non letter and number symbols with "_"
@@ -249,6 +254,10 @@ foreach(_HEADER endian.h sys/endian.h byteswap.h stdio.h stdint.h stdlib.h unist
         set(${_TODECLARE} 1)
     endif()
 endforeach()
+
+if (HAVE_STDLIB_H AND HAVE_STRING_H)
+    set(STDC_HEADERS 1)
+endif() 
 
 # Checking for getifaddrs and freeifaddrs
 set(_ADDRS_STUFF_COUNT 0)
@@ -279,6 +288,7 @@ foreach(_SYMBOL bswap_16 bswap_32 bswap_64)
         set(${_TODECLARE} 1)
     else()
         # add_compile_definitions(${_TODECLARE}=0)
+        set(${_TODECLARE} 0)
     endif()
 endforeach()
 
