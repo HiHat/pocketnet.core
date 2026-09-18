@@ -1774,7 +1774,12 @@ bool AppInitMain(const util::Ref& context, NodeContext& node, interfaces::BlockA
                 // new CBlockTreeDB tries to delete the existing file, which
                 // fails if it's still open from the previous loop. Close it first:
                 pblocktree.reset();
-                pblocktree.reset(new CBlockTreeDB(nBlockTreeDBCache, false, fReset));
+                //pblocktree.reset(new CBlockTreeDB(nBlockTreeDBCache, false, fReset));
+                pblocktree = std::make_unique<CBlockTreeDB>(DBParams{
+                                .path = args.GetDataDirNet() / "blocks" / "index",
+                                .cache_bytes = static_cast<size_t>(nBlockTreeDBCache),
+                                .memory_only = false,
+                                .wipe_data = fReset});
 
                 if (fReset) {
                     pblocktree->WriteReindexing(true);
@@ -1963,7 +1968,7 @@ bool AppInitMain(const util::Ref& context, NodeContext& node, interfaces::BlockA
     // ********************************************************* Step 8: start indexers
     if (args.GetBoolArg("-txindex", DEFAULT_TXINDEX))
     {
-        if (const auto error{CheckLegacyTxindex(*assert(chainman.m_blockman.m_block_tree_db))}) {
+        if (const auto error{CheckLegacyTxindex(*Assert(pblocktree.get()))}) {
             return InitError(*error);
         }
 
