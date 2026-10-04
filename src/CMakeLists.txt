@@ -432,32 +432,40 @@ if(HAVE_STD__SYSTEM OR HAVE_WSYSTEM)
     set(HAVE_SYSTEM 1)
 endif()
 
-set(CMAKE_REQUIRED_FLAGS "-msse4.1")
-check_cxx_source_compiles( "#include <stdint.h>
+include(CheckSourceCompilesWithFlags)
+
+set(SSE41_CXXFLAGS -msse4.1)
+check_cxx_source_compiles_with_flags(
+                            "#include <stdint.h>
                             #include <immintrin.h>
                             int main() {
                                 __m128i l = _mm_set1_epi32(0);
                                 return _mm_extract_epi32(l, 3);
-                            }" ENABLE_SSE41)
+                            }"
+                            ENABLE_SSE41
+                            CXXFLAGS ${SSE41_CXXFLAGS})
 
-set(CMAKE_REQUIRED_FLAGS "-mavx -mavx2")
-check_cxx_source_compiles( "#include <stdint.h>
+set(AVX2_CXXFLAGS -mavx -mavx2)
+check_cxx_source_compiles_with_flags( "#include <stdint.h>
                             #include <immintrin.h>
                             int main() {
                                 __m256i l = _mm256_set1_epi32(0);
                                 return _mm256_extract_epi32(l, 7);
-                            }" ENABLE_AVX2)
+                            }"
+                            ENABLE_AVX2
+                            CXXFLAGS ${AVX2_CXXFLAGS})
 
-set(CMAKE_REQUIRED_FLAGS "-msse4 -msha")
-check_cxx_source_compiles( "#include <stdint.h>
+set(SHANI_CXXFLAGS -msse4.1 -msha)
+check_cxx_source_compiles_with_flags( "#include <stdint.h>
                             #include <immintrin.h>
                             int main() {
                                 __m128i i = _mm_set1_epi32(0);
                                 __m128i j = _mm_set1_epi32(1);
                                 __m128i k = _mm_set1_epi32(2);
                                 return _mm_extract_epi32(_mm_sha256rnds2_epu32(i, j, k), 0);
-                            }" ENABLE_SHANI)
-
+                            }"
+                            ENABLE_SHANI
+                            CXXFLAGS ${SHANI_CXXFLAGS})
 
 #[[
 if (ENABLE_GLIBC_BACK_COMPAT)
@@ -964,25 +972,25 @@ if (ENABLE_SSE41)
         # target_compile_options(${POCKETCOIN_CRYPTO} PRIVATE /arch:SSE4.1)
     else ()
         target_compile_definitions(${POCKETCOIN_CRYPTO} PRIVATE ENABLE_SSE41)
-        target_compile_options(${POCKETCOIN_CRYPTO} PRIVATE -msse4.1)
+        target_compile_options(${POCKETCOIN_CRYPTO} PRIVATE ${SSE41_CXXFLAGS})
     endif ()
 endif ()
 if (ENABLE_AVX2)
     target_sources(${POCKETCOIN_CRYPTO} PRIVATE crypto/sha256_avx2.cpp)
     if (MSVC)
-        #        target_compile_options(${POCKETCOIN_CRYPTO} PRIVATE /arch:AVX /arch:AVX2)
+        # target_compile_options(${POCKETCOIN_CRYPTO} PRIVATE /arch:AVX /arch:AVX2)
     else ()
         target_compile_definitions(${POCKETCOIN_CRYPTO} PRIVATE ENABLE_AVX2)
-        target_compile_options(${POCKETCOIN_CRYPTO} PRIVATE -mavx -mavx2)
+        target_compile_options(${POCKETCOIN_CRYPTO} PRIVATE ${AVX2_CXXFLAGS})
     endif ()
 endif ()
 if (ENABLE_SHANI)
     target_sources(${POCKETCOIN_CRYPTO} PRIVATE crypto/sha256_shani.cpp)
     if (MSVC)
-        #        target_compile_options(${POCKETCOIN_CRYPTO} PRIVATE /arch:SSE4 /arch:SHA)
-    else ()
+        # target_compile_options(${POCKETCOIN_CRYPTO} PRIVATE /arch:SSE4 /arch:SHA)
+    elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "(x86|AMD64|amd64|i[3-6]86)")
         target_compile_definitions(${POCKETCOIN_CRYPTO} PRIVATE ENABLE_SHANI)
-        target_compile_options(${POCKETCOIN_CRYPTO} PRIVATE -msse4 -msha)
+        target_compile_options(${POCKETCOIN_CRYPTO} PRIVATE ${SHANI_CXXFLAGS})
     endif ()
 endif ()
 
